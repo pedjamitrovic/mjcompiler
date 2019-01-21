@@ -21,3 +21,17 @@
 
 # virtual machine crash logs, see http://www.java.com/en/download/help/error_hotspot.xml
 hs_err_pid*
+
+!src/mjcompiler/lib/*.jar
+
+src/mjcompiler/out/
+
+src/mjcompiler/spec/mjparser_astbuild.cup
+
+src/mjcompiler/src/rs/ac/bg/etf/pp1/MJParser.java
+
+src/mjcompiler/src/rs/ac/bg/etf/pp1/sym.java
+
+src/mjcompiler/src/rs/ac/bg/etf/pp1/Yylex.java
+
+src/mjcompiler/src/rs/ac/bg/etf/pp1/ast/
