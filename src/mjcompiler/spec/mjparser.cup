@@ -1,0 +1,362 @@
+package rs.ac.bg.etf.pp1;
+
+import java_cup.runtime.*;
+import org.apache.log4j.*;
+
+// import java.io.*;
+import rs.ac.bg.etf.pp1.ast.*;
+
+parser code {:
+
+	boolean errorDetected = false;
+
+	Logger log = Logger.getLogger(getClass());
+
+
+    // slede redefinisani metodi za prijavu gresaka radi izmene teksta poruke
+
+    public void report_fatal_error(String message, Object info) throws java.lang.Exception {
+      done_parsing();
+      report_error(message, info);
+    }
+
+    public void syntax_error(Symbol cur_token) {
+        report_error("\nSintaksna greska", cur_token);
+    }
+
+    public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
+        report_fatal_error("Fatalna greska, parsiranje se ne moze nastaviti", cur_token);
+    }
+
+    public void report_error(String message, Object info) {
+    	errorDetected = true;
+    	StringBuilder msg = new StringBuilder(message);
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.error(msg.toString());
+    }
+
+    public void report_info(String message, Object info) {
+    	StringBuilder msg = new StringBuilder(message);
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.info(msg.toString());
+    }
+
+:}
+
+scan with {:
+	Symbol s = this.getScanner().next_token();
+	/*if (s != null && s.value != null)
+		log.info(s.toString() + " " + s.value.toString());*/
+	return s;
+:}
+
+terminal PROGRAM, BREAK, CLASS, INTERFACE, ENUM, ELSE, CONST, IF, NEW;
+terminal PRINT, READ, RETURN, VOID, FOR, EXTENDS, IMPLEMENTS, CONTINUE;
+terminal PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ;
+terminal GT, GTE, LT, LTE, AND, OR, ASSIGN, INC, DEC;
+terminal SEMI, COMMA, DOT, LPAREN, RPAREN, LBOX, RBOX, LBRACE, RBRACE;
+
+terminal Integer NUM_CONST;
+terminal Character CHAR_CONST;
+terminal Boolean BOOL_CONST;
+terminal String IDENT;
+
+nonterminal Program;
+nonterminal Type;
+nonterminal DeclList;
+nonterminal SectDecl;
+nonterminal ConstSect;
+nonterminal ConstList;
+nonterminal ConstDecl;
+nonterminal ConstValue;
+nonterminal VarSect;
+nonterminal VarList;
+nonterminal VarDecl;
+nonterminal Enumeration;
+nonterminal EnumConstList;
+nonterminal EnumConstDecl;
+nonterminal OptEnumConstValue;
+nonterminal MethodList;
+nonterminal VarSectList;
+nonterminal Method;
+nonterminal MethodSignature;
+nonterminal RetType;
+nonterminal BoxesOpt;
+nonterminal FormPars;
+nonterminal FormParsList;
+nonterminal FormParDecl;
+nonterminal Statement;
+nonterminal PrintOptNumFields;
+nonterminal StatementList;
+nonterminal MethodCall;
+nonterminal DesignatorStatement;
+nonterminal OptDesignatorStatement;
+nonterminal OptCondition;
+nonterminal ActPars;
+nonterminal ActParsList;
+nonterminal Condition;
+nonterminal CondTerm;
+nonterminal CondFact;
+nonterminal Expr;
+nonterminal OptMinus;
+nonterminal OptExpr;
+nonterminal Term;
+nonterminal Factor;
+nonterminal OptNewArray;
+nonterminal Designator;
+nonterminal Relop;
+nonterminal Addop;
+nonterminal Mulop;
+
+precedence left ELSE;
+
+Program ::= (ProgramNode) PROGRAM IDENT DeclList LBRACE MethodList RBRACE;
+
+Type ::= (TypeNode) IDENT:typeName;
+
+DeclList ::= (DeclListNode) DeclList SectDecl
+            |
+            (NoDeclListNode) /* epsilon */
+            ;
+
+SectDecl ::= (ConstDeclarationsNode) ConstSect
+			|
+			(VarDeclarationsNode) VarSect
+			|
+			(EnumDeclarationsNode) Enumeration
+			;
+
+ConstSect ::= (ConstSectNode) CONST Type ConstList SEMI;
+
+ConstList ::= (ConstListNode) ConstList COMMA ConstDecl
+            |
+            (ConstNode) ConstDecl
+            ;
+
+ConstDecl ::= (ConstDeclNode) IDENT:constName ASSIGN ConstValue;
+
+ConstValue ::= (NumConstNode) NUM_CONST:value
+               |
+               (CharConstNode) CHAR_CONST:value
+               |
+               (BoolConstNode) BOOL_CONST:value
+               ;
+
+VarSect ::= (VarSectNode) Type VarList SEMI
+            |
+            (ErrorVarSectNode) error:e SEMI {: parser.report_error("Invalid variable declaration. ", null); :}
+            ;
+
+VarList ::= (VarListNode) VarList COMMA VarDecl
+            |
+            (VarNode) VarDecl
+            ;
+
+VarDecl ::= (VarDeclNode) IDENT:varName BoxesOpt
+            |
+            (ErrorVarDeclNode) error:e {: parser.report_error("Invalid variable declaration. ", null); :}
+            ;
+
+Enumeration ::= (EnumNode) ENUM IDENT:enumName LBRACE EnumConstList RBRACE;
+
+EnumConstList ::= (EnumConstListNode) EnumConstList COMMA EnumConstDecl
+                |
+                (EnumConstNode) EnumConstDecl
+                ;
+
+EnumConstDecl ::= (EnumConstDeclNode) IDENT:enumConstName OptEnumConstValue;
+
+OptEnumConstValue ::= (OptEnumConstValueNode) ASSIGN NUM_CONST:value
+        |
+        (NoOptEnumConstValueNode)  /* epsilon */
+        ;
+
+MethodList ::= (MethodListNode) MethodList Method
+				|
+				(NoMethodListNode) /* epsilon */
+				;
+
+VarSectList ::= (VarSectListNode) VarSectList VarSect
+            |
+            (NoVarSectListNode) /* epsilon */
+            ;
+
+Method ::= (MethodNode) MethodSignature VarSectList LBRACE StatementList RBRACE;
+
+MethodSignature ::= (MethodSignatureNode) RetType IDENT:methodName LPAREN FormPars RPAREN;
+
+RetType ::= (RetTypeNode) Type
+		|
+		(VoidRetTypeNode) VOID
+		;
+
+BoxesOpt ::= (BoxesNode) LBOX RBOX
+            |
+            (NoBoxesNode) /* epsilon */
+            ;
+
+FormPars ::= (FormParsNode) FormParsList
+			|
+			(NoFormParsNode) /* epsilon */
+			;
+
+FormParsList ::= (FormParsListNode) FormParsList COMMA FormParDecl
+				|
+				(FormParNode) FormParDecl
+				;
+
+FormParDecl ::= (FormParDeclNode) Type IDENT:parName BoxesOpt
+                |
+                (ErrorFormParDeclNode) error:e {: parser.report_error("Invalid formal parameter declaration. ", null); :}
+                ;
+
+Statement ::= (DesignatorStmtNode) DesignatorStatement SEMI
+			|
+			(IfStmtNode) IF LPAREN Condition RPAREN Statement
+			|
+			(IfElseStmtNode) IF LPAREN Condition RPAREN Statement ELSE Statement
+			|
+			(ForStmtNode) FOR LPAREN OptDesignatorStatement SEMI OptCondition SEMI OptDesignatorStatement RPAREN Statement
+			|
+			(BreakStmtNode) BREAK SEMI
+			|
+			(ContinueStmtNode) CONTINUE SEMI
+			|
+			(ReturnStmtNode) RETURN OptExpr SEMI
+			|
+			(ReadStmtNode) READ LPAREN Designator RPAREN SEMI
+			|
+			(PrintStmtNode) PRINT LPAREN Expr PrintOptNumFields RPAREN SEMI
+			|
+			(BlockStmtNode) LBRACE StatementList RBRACE
+			|
+            (ErrorStmtNode) error:e SEMI {: parser.report_error("Invalid statement. ", null); :}
+			;
+
+PrintOptNumFields ::= (PrintOptNumFieldsNode) COMMA NUM_CONST:value
+                    |
+                    (NoPrintOptNumFieldsNode) /* epsilon */
+                    ;
+
+StatementList ::= (StatementsNode) StatementList Statement
+				|
+				(NoStatementsNode) /* epsilon */
+				;
+
+MethodCall ::= (MethodCallNode) Designator LPAREN ActPars RPAREN;
+
+DesignatorStatement ::= (DesignatorStmtAssignNode) Designator ASSIGN Expr
+					|
+					(DesignatorStmtCallNode) MethodCall
+					|
+					(DesignatorStmtIncNode) Designator INC
+					|
+					(DesignatorStmtDecNode) Designator DEC
+					;
+
+OptDesignatorStatement ::= (DesignatorStatementNode) DesignatorStatement
+						|
+						(NoDesignatorStatementNode) /* epsilon */
+						;
+
+OptCondition ::= (OptConditionNode) Condition
+						|
+						(NoOptConditionNode) /* epsilon */
+						;
+
+ActPars ::= (ActParsNode) ActParsList
+          |
+          (NoActParsNode) /* epsilon */
+          ;
+
+ActParsList ::= (ActParsListNode) ActParsList COMMA Expr
+            |
+            (ActParNode) Expr
+            ;
+
+Condition ::= (ConditionOrNode) Condition OR CondTerm
+          |
+          (ConditionNode) CondTerm
+          ;
+
+CondTerm ::= (CondTermAndNode) CondTerm AND CondFact
+          |
+          (CondTermNode) CondFact
+          ;
+
+CondFact ::= (CondFactRelopNode) Expr Relop Expr
+            |
+            (CondFactNode) Expr
+            ;
+
+Expr ::= (ExprAddopNode) Expr Addop Term
+		|
+		(ExprNode) OptMinus Term
+		;
+
+OptMinus ::= (UnMinus) MINUS
+            |
+            (NoUnMinus)/* epsilon */
+            ;
+
+OptExpr ::= (OptExprNode) Expr
+		|
+		(NoOptExprNode) /* epsilon */
+		;
+
+Term ::= (TermMulopNode) Term Mulop Factor
+        |
+        (TermNode) Factor
+        ;
+
+Factor ::= (FactorDesignatorNode) Designator
+        |
+		(FactorCallNode) MethodCall
+		|
+		(FactorConstNode) ConstValue
+		|
+		(FactorNewNode) NEW Type OptNewArray
+		|
+		(FactorExprNode) LPAREN Expr RPAREN
+		|
+        (ErrorFactorNode) error:e {: parser.report_error("Invalid factor. ", null); :}
+		;
+
+OptNewArray ::=  (OptNewArrayNode) LBOX Expr RBOX
+			|
+			(NoOptNewArrayNode) /* epsilon */
+			;
+
+Designator ::= (DesignatorChainNode) Designator DOT IDENT
+            |
+            (DesignatorIndexNode) Designator LBOX Expr RBOX
+            |
+            (DesignatorNode) IDENT
+            ;
+
+Relop ::= (RelopEqNode) EQ
+		|
+		(RelopNeqNode) NEQ
+		|
+		(RelopGtNode) GT
+		|
+		(RelopGteNode) GTE
+		|
+		(RelopLtNode) LT
+		|
+		(RelopLteNode) LTE
+		;
+
+Addop ::= (AddopPlusNode) PLUS
+		|
+		(AddopMinusNode) MINUS
+		;
+
+Mulop ::= (MulopMulNode) MUL
+		|
+		(MulopDivNode) DIV
+		|
+		(MulopModNode) MOD
+		;

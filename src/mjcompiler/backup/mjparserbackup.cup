@@ -1,0 +1,339 @@
+package rs.ac.bg.etf.pp1;
+
+import java_cup.runtime.*;
+import org.apache.log4j.*;
+
+// import java.io.*;
+import rs.ac.bg.etf.pp1.ast.*;
+
+parser code {:
+
+	boolean errorDetected = false;
+
+	Logger log = Logger.getLogger(getClass());
+
+
+    // slede redefinisani metodi za prijavu gresaka radi izmene teksta poruke
+
+    public void report_fatal_error(String message, Object info) throws java.lang.Exception {
+      done_parsing();
+      report_error(message, info);
+    }
+
+    public void syntax_error(Symbol cur_token) {
+        report_error("\nSintaksna greska", cur_token);
+    }
+
+    public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
+        report_fatal_error("Fatalna greska, parsiranje se ne moze nastaviti", cur_token);
+    }
+
+    public void report_error(String message, Object info) {
+    	errorDetected = true;
+    	StringBuilder msg = new StringBuilder(message);
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.error(msg.toString());
+    }
+
+    public void report_info(String message, Object info) {
+    	StringBuilder msg = new StringBuilder(message);
+    	if (info instanceof Symbol)
+            msg.append (" na liniji ").append(((Symbol)info).left);
+        log.info(msg.toString());
+    }
+
+:}
+
+scan with {:
+	Symbol s = this.getScanner().next_token();
+	if (s != null && s.value != null)
+		log.info(s.toString() + " " + s.value.toString());
+	return s;
+:}
+
+terminal PROGRAM, BREAK, CLASS, INTERFACE, ENUM, ELSE, CONST, IF, NEW;
+terminal PRINT, READ, RETURN, VOID, FOR, EXTENDS, IMPLEMENTS, CONTINUE, IDENT, NUM_CONST;
+terminal CHAR_CONST, BOOL_CONST, PLUS, MINUS, MUL, DIV, MOD, EQ, NEQ;
+terminal GT, GTE, LT, LTE, AND, OR, ASSIGN, INC, DEC;
+terminal SEMI, COMMA, DOT, LPAREN, RPAREN, LBOX, RBOX, LBRACE, RBRACE;
+
+nonterminal Program, DeclList, MethodDeclList, ConstDecl, VarDecl, ClassDecl, EnumDecl;
+nonterminal InterfaceDecl, MethodDecl, Type, NumConstList, CharConstList, BoolConstList, BoxesOpt;
+nonterminal MoreVarOpt, MoreVarList, VarDeclList, ExtendsOpt, MethodDeclListOpt, TypeList, NumConstOpt;
+nonterminal EnumListOpt, InterfaceMethodDeclList, RetVal, FormPars, InterfaceMethodDecl, StatementList, FormParDecl;
+nonterminal FormParsList, Statement, DesignatorStatement, Condition, OptElseStatement, OptDesignatorStatement, OptCondition;
+nonterminal OptExpr, Designator, Expr, Assignop, ActParsOpt, ActPars, MoreExprOpt;
+nonterminal CondTerm, MoreCondTerm, CondFact, MoreCondFact, OptRelOprExpr, Relop, AddopTermList;
+nonterminal Term, Addop, MulopFactorList, Mulop, Factor, OptCall, OptNewArray;
+nonterminal IdentExprList, IdentOrExpr;
+
+
+Program ::= (ProgramNode) PROGRAM IDENT DeclList LBRACE MethodDeclList RBRACE;
+
+DeclList ::= (ConstDeclarationsNode) DeclList ConstDecl
+			|
+			(VarDeclarationsNode) DeclList VarDecl
+			|
+			(ClassDeclarationsNode) DeclList ClassDecl
+			|
+			(EnumDeclarationsNode) DeclList EnumDecl
+			|
+			(InterfaceDeclarationsNode) DeclList InterfaceDecl
+			|
+			(NoDeclarationNode) /* epsilon */
+			;
+
+MethodDeclList ::= (MethodDeclarationsNode) MethodDeclList MethodDecl
+				|
+				(NoMethodDeclNode) /* epsilon */
+				;
+
+ConstDecl ::= (ConstNumDeclNode) CONST Type IDENT ASSIGN NUM_CONST NumConstList SEMI
+			|
+			  (ConstCharDeclNode) CONST Type IDENT ASSIGN CHAR_CONST CharConstList SEMI
+			|
+			  (ConstBoolDeclNode) CONST Type IDENT ASSIGN BOOL_CONST BoolConstList SEMI
+			;
+
+NumConstList ::= (NumConstsNode) NumConstList COMMA IDENT ASSIGN NUM_CONST
+			|
+			(NoNumConstsNode) /* epsilon */
+			;
+
+CharConstList ::= (CharConstsNode) CharConstList COMMA IDENT ASSIGN CHAR_CONST
+			|
+			(NoCharConstsNode) /* epsilon */
+			;
+
+BoolConstList ::= (BoolConstsNode) BoolConstList COMMA IDENT ASSIGN BOOL_CONST
+			|
+			(NoBoolConstsNode) /* epsilon */
+			;
+
+VarDecl ::= (VarDeclNode) Type IDENT BoxesOpt MoreVarOpt SEMI;
+
+MoreVarOpt ::= (MoreVarNode) MoreVarOpt COMMA IDENT BoxesOpt
+			|
+			(NoMoreVarNode) /* epsilon */
+			;
+
+VarDeclList ::= (VarDeclarationsNode) VarDeclList VarDecl
+			|
+			(NoVarDeclNode) /* epsilon */
+			;
+
+BoxesOpt ::= (BoxesOptNode) LBOX RBOX
+		|
+		(NoBoxesOptNode) /* epsilon */
+		;
+
+
+ClassDecl ::= (ClassDeclNode) CLASS IDENT ExtendsOpt ImplementsOpt LBRACE VarDeclList MethodDeclListOpt RBRACE;
+
+ExtendsOpt ::= (ExtendsOptNode) EXTENDS Type
+			|
+			(NoExtendsOptNode) /* epsilon */
+			;
+
+ImplementsOpt ::= (ImplementsOptNode) IMPLEMENTS Type TypeList
+			|
+			(NoImplementsOptNode) /* epsilon */
+			;
+
+TypeList ::= (TypeListNode) TypeList COMMA Type
+			|
+			(NoTypeListNode) /* epsilon */
+			;
+
+EnumDecl ::= (EnumDeclNode) ENUM IDENT LBRACE IDENT NumConstOpt EnumListOpt RBRACE;
+
+NumConstOpt ::= (NumConstOptNode) ASSIGN NUM_CONST
+			|
+			(NoNumConstOptNode) /* epsilon */
+			;
+
+EnumListOpt ::= (EnumListOptNode) EnumListOpt COMMA IDENT NumConstOpt
+			|
+			(NoEnumListOptNode) /* epsilon */
+			;
+
+InterfaceDecl ::= (InterfaceDeclNode)INTERFACE IDENT LBRACE InterfaceMethodDeclList RBRACE;
+
+InterfaceMethodDecl ::= (InterfaceMethodDeclNode) RetVal IDENT LPAREN FormPars RPAREN SEMI;
+
+InterfaceMethodDeclList ::= (InterfaceMethodDeclarationsNode) InterfaceMethodDeclList InterfaceMethodDecl
+						|
+						(NoInterfaceMethodDeclarationsNode) /* epsilon */
+						;
+RetVal ::= (TypeRetValNode) Type
+		|
+		(VoidRetValNode) VOID
+		;
+
+MethodDecl ::= (MethodDeclNode) RetVal IDENT LPAREN FormPars RPAREN VarDeclList LBRACE StatementList RBRACE;
+
+FormParDecl :: = (FormParDeclNode)Type IDENT BoxesOpt;
+
+FormPars ::= (FormParsNode) FormParsList
+			|
+			(NoFormParsNode) /* epsilon */
+			;
+
+FormParsList ::= (FormParDeclsNode) FormParsList COMMA FormParDecl
+				|
+				(SingleFormParDeclNode) FormParDecl
+				;
+
+Type ::= (TypeNode) IDENT;
+
+Statement ::= (DesignatorStmtNode) DesignatorStatement SEMI
+			|
+			(IfStmtNode) IF LPAREN Condition RPAREN Statement OptElseStatement
+			|
+			(ForStmtNode) FOR LPAREN OptDesignatorStatement SEMI OptCondition SEMI OptDesignatorStatement RPAREN Statement
+			|
+			(BreakStmtNode) BREAK SEMI
+			|
+			(ContinueStmtNode) CONTINUE SEMI
+			|
+			(ReturnStmtNode) RETURN OptExpr SEMI
+			|
+			(ReadStmtNode) READ LPAREN Designator RPAREN SEMI
+			|
+			(PrintStmtNode) PRINT LPAREN Expr RPAREN SEMI
+			|
+			(PrintWithNumStmtNode) PRINT LPAREN Expr COMMA NUM_CONST RPAREN SEMI
+			|
+			(BlockStmtNode) LBRACE StatementList RBRACE;
+
+StatementList ::= (StatementsNode) StatementList Statement
+				|
+				(NoStatementsNode) /* epsilon */
+				;
+
+DesignatorStatement ::= (DesignatorStmtAssignNode) Designator Assignop Expr
+					|
+					(DesignatorStmtCallNode) Designator LPAREN ActParsOpt RPAREN
+					|
+					(DesignatorStmtIncNode) Designator INC
+					|
+					(DesignatorStmtDecNode) Designator DEC
+					;
+
+OptDesignatorStatement ::= (DesignatorStatementNode) DesignatorStatement
+						|
+						(NoDesignatorStatementNode) /* epsilon */
+						;
+
+OptElseStatement ::= (ElseStatementNode) ELSE Statement
+					|
+					(NoelseStatementNode) /* epsilon */
+					;
+
+ActPars ::= (ActParsNode) Expr MoreExprOpt;
+
+MoreExprOpt ::= (MoreExprNode) MoreExprOpt COMMA Expr
+			|
+			(NoMoreExprNode) /* epsilon */
+			;
+
+Condition ::= (ConditionNode) CondTerm MoreCondTerm;
+
+CondTerm ::= (CondTermNode) CondFact MoreCondFact;
+
+MoreCondTerm ::= (MoreCondTermNode) OR CondTerm
+			|
+			(NoMoreCondTermNode) /* epsilon */
+			;
+
+CondFact ::= (CondFactNode) Expr OptRelOprExpr;
+
+OptRelOprExpr ::= (RelOprExprNode) Relop Expr
+				|
+				(NoRelOprExprNode) /* epsilon */
+				;
+
+MoreCondFact ::= (MoreCondFactNode) AND CondFact
+			|
+			(NoMoreCondFactNode) /* epsilon */
+			;
+
+Expr ::= (ExprPosNode) Term AddopTermList
+		|
+		(ExprNegNode) MINUS Term AddopTermList
+		;
+
+AddopTermList ::= (AddopTermsNode) AddopTermList Addop Term
+			|
+			(NoAddopTermsNode) /* epsilon */
+			;
+
+Term ::= (TermNode) Factor MulopFactorList;
+
+MulopFactorList ::= (MulopFactorsNode) MulopFactorList Mulop Factor
+			|
+			(NoMulopFactorsNode) /* epsilon */
+			;
+
+Factor ::= (FactorCallNode) Designator OptCall
+		|
+		(FactorNumNode) NUM_CONST
+		|
+		(FactorCharNode) CHAR_CONST
+		|
+		(FactorBoolNode) BOOL_CONST
+		|
+		(FactorNewNode) NEW Type OptNewArray
+		|
+		(FactorExprNode) LPAREN Expr RPAREN
+		;
+
+OptCall ::= (OptCallNode) LPAREN RPAREN
+		|
+		(OptCallWithParsNode) LPAREN ActPars RPAREN
+		;
+
+OptNewArray ::=  (OptNewArrayNode) LBOX Expr RBOX
+			|
+			(NoOptNewArrayNode) /* epsilon */
+			;
+
+Designator ::= (DesignatorNode) IDENT IdentExprList;
+
+IdentExprList ::= (IdentExprsNode) IdentExprList IdentOrExpr
+				|
+				(NoIdentExprsNode) /* epsilon */
+				;
+
+IdentOrExpr ::= (DotIdentNode) DOT IDENT
+				|
+				(BoxExprNode) LBOX Expr RBOX
+				;
+
+Assignop ::= (AssignopNode) ASSIGN;
+
+Relop ::= (RelopEqNode) EQ
+		|
+		(RelopNeqNode) NEQ
+		|
+		(RelopGtNode) GT
+		|
+		(RelopGteNode) GTE
+		|
+		(RelopLtNode) LT
+		|
+		(RelopLteNode) LTE
+		;
+
+Addop ::= (AddopPlusNode) PLUS
+		|
+		(AddopMinusNode) MINUS
+		;
+
+Mulop ::= (MulopMulNode) MUL
+		|
+		(MulopDivNode) DIV
+		|
+		(MulopModNode) MOD
+		;
