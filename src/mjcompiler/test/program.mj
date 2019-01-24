@@ -12,8 +12,17 @@ program MJProgram
 		y = 2;
 		x = y + 2;
 		y = (k() + 3) * T;
+		y++;
+		x--;
+		print('y', 10);
+		print('=');
 		print(y);
+		print(' ');
+		print('x');
+        print('=');
 		print(x);
+		print(' ');
+        print(10000);
 		return 0;
 	}
 }

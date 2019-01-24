@@ -21,25 +21,25 @@ parser code {:
     }
 
     public void syntax_error(Symbol cur_token) {
-        report_error("\nSintaksna greska", cur_token);
+        report_error("Syntax error ", cur_token);
     }
 
     public void unrecovered_syntax_error(Symbol cur_token) throws java.lang.Exception {
-        report_fatal_error("Fatalna greska, parsiranje se ne moze nastaviti", cur_token);
+        report_fatal_error("Fatal error, parsing cannot be continued", cur_token);
     }
 
     public void report_error(String message, Object info) {
     	errorDetected = true;
     	StringBuilder msg = new StringBuilder(message);
     	if (info instanceof Symbol)
-            msg.append (" na liniji ").append(((Symbol)info).left);
+            msg.append ("on line ").append(((Symbol)info).left);
         log.error(msg.toString());
     }
 
     public void report_info(String message, Object info) {
     	StringBuilder msg = new StringBuilder(message);
     	if (info instanceof Symbol)
-            msg.append (" na liniji ").append(((Symbol)info).left);
+            msg.append ("on line ").append(((Symbol)info).left);
         log.info(msg.toString());
     }
 
@@ -274,9 +274,9 @@ OptDesignatorStatement ::= (DesignatorStatementNode) DesignatorStatement
 						;
 
 OptCondition ::= (OptConditionNode) Condition
-						|
-						(NoOptConditionNode) /* epsilon */
-						;
+                |
+                (NoOptConditionNode) /* epsilon */
+                ;
 
 ActPars ::= (ActParsNode) ActParsList
           |

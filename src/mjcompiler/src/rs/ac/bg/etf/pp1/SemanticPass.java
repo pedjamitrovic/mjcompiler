@@ -20,7 +20,7 @@ public class SemanticPass extends VisitorAdaptor {
 		StringBuilder msg = new StringBuilder(message);
 		int line = (info == null) ? 0: info.getLine();
 		if (line != 0)
-			msg.append (" na liniji ").append(line);
+			msg.append ("on line ").append(line);
 		log.error(msg.toString());
 	}
 
@@ -28,7 +28,7 @@ public class SemanticPass extends VisitorAdaptor {
 		StringBuilder msg = new StringBuilder(message); 
 		int line = (info == null) ? 0: info.getLine();
 		if (line != 0)
-			msg.append (" na liniji ").append(line);
+			msg.append ("on line ").append(line);
 		log.info(msg.toString());
 	}
 
@@ -175,6 +175,14 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(DesignatorStmtAssignNode node){
 		if(!node.getExpr().obj.getType().assignableTo(node.getDesignator().obj.getType())){
 			report_error("Error: Source is not assignable to destination. ", node);
+		}
+	}
+	public void visit(DesignatorIndexNode node){
+		if(node.getDesignator().obj.getType().getKind() != Struct.Array){
+			report_error("Error: Name " + node.getDesignator().obj.getName() + " is not an array. ", node);
+		}
+		if(node.getExpr().obj.getType() != Tab.intType){
+			report_error("Error: Index of array must be int. ", node);
 		}
 	}
 	public void visit(FactorCallNode node){

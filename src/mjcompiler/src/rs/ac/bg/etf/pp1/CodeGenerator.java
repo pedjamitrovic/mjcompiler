@@ -4,6 +4,7 @@ import rs.ac.bg.etf.pp1.CounterVisitor.FormParamCounter;
 import rs.ac.bg.etf.pp1.CounterVisitor.VarCounter;
 import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
+import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 
 public class CodeGenerator extends VisitorAdaptor {
@@ -58,12 +59,41 @@ public class CodeGenerator extends VisitorAdaptor {
 		Code.store(node.getDesignator().obj);
 	}
 
-	public void visit(ExprAddopNode node) {
+	public void visit(DesignatorStmtIncNode node) {
+		Code.put(Code.const_1);
 		Code.put(Code.add);
+		Code.store(node.getDesignator().obj);
 	}
 
+	public void visit(DesignatorStmtDecNode node) {
+		Code.put(Code.const_1);
+		Code.put(Code.sub);
+		Code.store(node.getDesignator().obj);
+	}
+
+	public void visit(ExprAddopNode node) {
+		if(node.getAddop() instanceof AddopPlusNode){
+			Code.put(Code.add);
+		}
+		else if(node.getAddop() instanceof AddopMinusNode){
+			Code.put(Code.sub);
+		}
+	}
+	public void visit(ExprNode node) {
+		if(node.getOptMinus() instanceof UnMinus){
+			Code.put(Code.neg);
+		}
+	}
 	public void visit(TermMulopNode node) {
-		Code.put(Code.mul);
+		if(node.getMulop() instanceof MulopMulNode){
+			Code.put(Code.mul);
+		}
+		else if(node.getMulop() instanceof MulopDivNode){
+			Code.put(Code.div);
+		}
+		else if(node.getMulop() instanceof MulopModNode){
+			Code.put(Code.rem);
+		}
 	}
 
 	public void visit(MethodCallNode node) {
@@ -77,7 +107,16 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(PrintStmtNode node) {
-		Code.put(Code.const_5);
-		Code.put(Code.print);
+	    if(node.getPrintOptNumFields() instanceof PrintOptNumFieldsNode){
+	        PrintOptNumFieldsNode printOptNumFieldsNode = (PrintOptNumFieldsNode) node.getPrintOptNumFields();
+			Code.loadConst(printOptNumFieldsNode.getValue());
+        }
+		else Code.put(Code.const_1);
+		if(node.getExpr().obj.getType() == Tab.intType){
+			Code.put(Code.print);
+		}
+		else if (node.getExpr().obj.getType() == Tab.charType){
+			Code.put(Code.bprint);
+		}
 	}
 }
