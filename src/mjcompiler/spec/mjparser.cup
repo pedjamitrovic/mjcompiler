@@ -64,24 +64,28 @@ terminal Boolean BOOL_CONST;
 terminal String IDENT;
 
 nonterminal Program;
-nonterminal Type;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ProgramDecl;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Type;
 nonterminal DeclList;
 nonterminal SectDecl;
 nonterminal ConstSect;
+nonterminal ConstSectDecl;
 nonterminal ConstList;
-nonterminal ConstDecl;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ConstDecl;
 nonterminal ConstValue;
 nonterminal VarSect;
+nonterminal VarSectDecl;
 nonterminal VarList;
-nonterminal VarDecl;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj VarDecl;
 nonterminal Enumeration;
 nonterminal EnumConstList;
 nonterminal EnumConstDecl;
 nonterminal OptEnumConstValue;
 nonterminal MethodList;
 nonterminal VarSectList;
-nonterminal Method;
-nonterminal MethodSignature;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Method;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodSignature;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodDecl;
 nonterminal RetType;
 nonterminal BoxesOpt;
 nonterminal FormPars;
@@ -90,7 +94,7 @@ nonterminal FormParDecl;
 nonterminal Statement;
 nonterminal PrintOptNumFields;
 nonterminal StatementList;
-nonterminal MethodCall;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCall;
 nonterminal DesignatorStatement;
 nonterminal OptDesignatorStatement;
 nonterminal OptCondition;
@@ -99,20 +103,22 @@ nonterminal ActParsList;
 nonterminal Condition;
 nonterminal CondTerm;
 nonterminal CondFact;
-nonterminal Expr;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Expr;
 nonterminal OptMinus;
 nonterminal OptExpr;
-nonterminal Term;
-nonterminal Factor;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Term;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Factor;
 nonterminal OptNewArray;
-nonterminal Designator;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj Designator;
 nonterminal Relop;
 nonterminal Addop;
 nonterminal Mulop;
 
 precedence left ELSE;
 
-Program ::= (ProgramNode) PROGRAM IDENT DeclList LBRACE MethodList RBRACE;
+Program ::= (ProgramNode) ProgramDecl DeclList LBRACE MethodList RBRACE;
+
+ProgramDecl ::= (ProgramDeclNode) PROGRAM IDENT:programName;
 
 Type ::= (TypeNode) IDENT:typeName;
 
@@ -128,7 +134,9 @@ SectDecl ::= (ConstDeclarationsNode) ConstSect
 			(EnumDeclarationsNode) Enumeration
 			;
 
-ConstSect ::= (ConstSectNode) CONST Type ConstList SEMI;
+ConstSect ::= (ConstSectNode) ConstSectDecl ConstList SEMI;
+
+ConstSectDecl ::= (ConstSectDeclNode) CONST Type;
 
 ConstList ::= (ConstListNode) ConstList COMMA ConstDecl
             |
@@ -144,10 +152,12 @@ ConstValue ::= (NumConstNode) NUM_CONST:value
                (BoolConstNode) BOOL_CONST:value
                ;
 
-VarSect ::= (VarSectNode) Type VarList SEMI
+VarSect ::= (VarSectNode) VarSectDecl VarList SEMI
             |
             (ErrorVarSectNode) error:e SEMI {: parser.report_error("Invalid variable declaration. ", null); :}
             ;
+
+VarSectDecl ::= (VarSectDeclNode) Type;
 
 VarList ::= (VarListNode) VarList COMMA VarDecl
             |
@@ -169,9 +179,9 @@ EnumConstList ::= (EnumConstListNode) EnumConstList COMMA EnumConstDecl
 EnumConstDecl ::= (EnumConstDeclNode) IDENT:enumConstName OptEnumConstValue;
 
 OptEnumConstValue ::= (OptEnumConstValueNode) ASSIGN NUM_CONST:value
-        |
-        (NoOptEnumConstValueNode)  /* epsilon */
-        ;
+                    |
+                    (NoOptEnumConstValueNode)  /* epsilon */
+                    ;
 
 MethodList ::= (MethodListNode) MethodList Method
 				|
@@ -179,18 +189,20 @@ MethodList ::= (MethodListNode) MethodList Method
 				;
 
 VarSectList ::= (VarSectListNode) VarSectList VarSect
-            |
-            (NoVarSectListNode) /* epsilon */
-            ;
+                |
+                (NoVarSectListNode) /* epsilon */
+                ;
 
 Method ::= (MethodNode) MethodSignature VarSectList LBRACE StatementList RBRACE;
 
-MethodSignature ::= (MethodSignatureNode) RetType IDENT:methodName LPAREN FormPars RPAREN;
+MethodSignature ::= (MethodSignatureNode) MethodDecl LPAREN FormPars RPAREN;
+
+MethodDecl ::= (MethodDeclNode) RetType IDENT:methodName;
 
 RetType ::= (RetTypeNode) Type
-		|
-		(VoidRetTypeNode) VOID
-		;
+            |
+            (VoidRetTypeNode) VOID
+            ;
 
 BoxesOpt ::= (BoxesNode) LBOX RBOX
             |
@@ -329,11 +341,11 @@ OptNewArray ::=  (OptNewArrayNode) LBOX Expr RBOX
 			(NoOptNewArrayNode) /* epsilon */
 			;
 
-Designator ::= (DesignatorChainNode) Designator DOT IDENT
+Designator ::= (DesignatorChainNode) Designator DOT IDENT:name
             |
             (DesignatorIndexNode) Designator LBOX Expr RBOX
             |
-            (DesignatorNode) IDENT
+            (DesignatorNode) IDENT:name
             ;
 
 Relop ::= (RelopEqNode) EQ
