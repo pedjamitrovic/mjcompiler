@@ -13,6 +13,7 @@ import rs.ac.bg.etf.pp1.ast.SyntaxNode;
 import rs.ac.bg.etf.pp1.util.Log4JUtils;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
+import rs.ac.bg.etf.pp1.TabExtension;
 
 public class MJTest {
 
@@ -43,6 +44,7 @@ public class MJTest {
 	        SyntaxNode prog = (SyntaxNode)(s.value);
 	        
 			Tab.init(); // Universe scope
+			TabExtension.init();
 			SemanticPass semanticCheck = new SemanticPass();
 			prog.traverseBottomUp(semanticCheck);
 

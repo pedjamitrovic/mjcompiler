@@ -78,8 +78,9 @@ nonterminal VarSectDecl;
 nonterminal VarList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj VarDecl;
 nonterminal Enumeration;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj EnumDecl;
 nonterminal EnumConstList;
-nonterminal EnumConstDecl;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj EnumConstDecl;
 nonterminal OptEnumConstValue;
 nonterminal MethodList;
 nonterminal VarSectList;
@@ -95,11 +96,13 @@ nonterminal Statement;
 nonterminal PrintOptNumFields;
 nonterminal StatementList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCall;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallDecl;
 nonterminal DesignatorStatement;
 nonterminal OptDesignatorStatement;
 nonterminal OptCondition;
 nonterminal ActPars;
 nonterminal ActParsList;
+nonterminal ActParDecl;
 nonterminal Condition;
 nonterminal CondTerm;
 nonterminal CondFact;
@@ -169,7 +172,9 @@ VarDecl ::= (VarDeclNode) IDENT:varName BoxesOpt
             (ErrorVarDeclNode) error:e {: parser.report_error("Invalid variable declaration. ", null); :}
             ;
 
-Enumeration ::= (EnumNode) ENUM IDENT:enumName LBRACE EnumConstList RBRACE;
+Enumeration ::= (EnumNode) EnumDecl LBRACE EnumConstList RBRACE;
+
+EnumDecl ::= (EnumDeclNode) ENUM IDENT:enumName;
 
 EnumConstList ::= (EnumConstListNode) EnumConstList COMMA EnumConstDecl
                 |
@@ -257,7 +262,9 @@ StatementList ::= (StatementsNode) StatementList Statement
 				(NoStatementsNode) /* epsilon */
 				;
 
-MethodCall ::= (MethodCallNode) Designator LPAREN ActPars RPAREN;
+MethodCall ::= (MethodCallNode) MethodCallDecl LPAREN ActPars RPAREN;
+
+MethodCallDecl ::= (MethodCallDeclNode) Designator;
 
 DesignatorStatement ::= (DesignatorStmtAssignNode) Designator ASSIGN Expr
 					|
@@ -283,10 +290,12 @@ ActPars ::= (ActParsNode) ActParsList
           (NoActParsNode) /* epsilon */
           ;
 
-ActParsList ::= (ActParsListNode) ActParsList COMMA Expr
+ActParsList ::= (ActParsListNode) ActParsList COMMA ActParDecl
             |
-            (ActParNode) Expr
+            (ActParNode) ActParDecl
             ;
+
+ActParDecl ::= (ActParDeclNode) Expr;
 
 Condition ::= (ConditionOrNode) Condition OR CondTerm
           |

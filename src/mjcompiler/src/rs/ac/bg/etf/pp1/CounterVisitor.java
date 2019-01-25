@@ -13,7 +13,7 @@ public class CounterVisitor extends VisitorAdaptor {
 	public static class FormParamCounter extends CounterVisitor {
 
 		@Override
-		public void visit(FormParDeclNode formParamDecl1) {
+		public void visit(FormParDeclNode node) {
 			count++;
 		}		
 	}
@@ -21,6 +21,18 @@ public class CounterVisitor extends VisitorAdaptor {
 	public static class VarCounter extends CounterVisitor {		
 		@Override
 		public void visit(VarDeclNode VarDecl) {
+			count++;
+		}
+	}
+
+	public static class ActParamCounter extends CounterVisitor {
+
+		@Override
+		public void visit(ActParNode node) {
+			count++;
+		}
+		@Override
+		public void visit(ActParsListNode node) {
 			count++;
 		}
 	}

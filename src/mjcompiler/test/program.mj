@@ -1,20 +1,22 @@
 program MJProgram
 	int x, y;
+	enum days { mon = 1, tue = 3, wed}
 	const int T = 4;
+	const bool b = false;
 {
 	
-	int k () int c; {
+	int k (int a) int c; {
 		c = 1;
-		return c+2;
+		return c+a;
 	}
 	
 	int main() {
 		y = 2;
 		x = y + 2;
-		y = (k() + 3) * T;
+		y = (k(x) + 3) * T;
 		y++;
 		x--;
-		print('y', 10);
+		print('y', 1);
 		print('=');
 		print(y);
 		print(' ');
@@ -23,6 +25,7 @@ program MJProgram
 		print(x);
 		print(' ');
         print(10000);
+        print(b, 2);
 		return 0;
 	}
 }

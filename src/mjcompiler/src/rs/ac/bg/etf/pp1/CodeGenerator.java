@@ -49,8 +49,15 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(DesignatorNode node) {
+		if(node.obj.getType() == TabExtension.enumType) return;
 		SyntaxNode parent = node.getParent();
-		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallNode)) {
+		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode)) {
+			Code.load(node.obj);
+		}
+	}
+
+	public void visit(DesignatorChainNode node) {
+		if(node.getDesignator().obj.getType() == TabExtension.enumType){
 			Code.load(node.obj);
 		}
 	}
@@ -97,7 +104,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(MethodCallNode node) {
-		Obj functionObj = node.getDesignator().obj;
+		Obj functionObj = node.getMethodCallDecl().obj;
 		int offset = functionObj.getAdr() - Code.pc;
 		Code.put(Code.call);
 		Code.put2(offset);
@@ -112,7 +119,7 @@ public class CodeGenerator extends VisitorAdaptor {
 			Code.loadConst(printOptNumFieldsNode.getValue());
         }
 		else Code.put(Code.const_1);
-		if(node.getExpr().obj.getType() == Tab.intType){
+		if(node.getExpr().obj.getType() == Tab.intType || node.getExpr().obj.getType() == TabExtension.boolType){
 			Code.put(Code.print);
 		}
 		else if (node.getExpr().obj.getType() == Tab.charType){

@@ -5,6 +5,10 @@ import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
+import rs.ac.bg.etf.pp1.CounterVisitor.ActParamCounter;
+
+import java.util.Collection;
+import java.util.Iterator;
 
 public class SemanticPass extends VisitorAdaptor {
 
@@ -56,14 +60,14 @@ public class SemanticPass extends VisitorAdaptor {
 		Obj typeObj = Tab.find(node.getTypeName());
 		node.obj = Tab.noObj;
 		if (typeObj == Tab.noObj) {
-			report_error("Type " + node.getTypeName() + " not found. ", null);
+			report_error("Type " + node.getTypeName() + " not found ", null);
 		}
 		else {
 			if (typeObj.getKind() == Obj.Type) {
 				node.obj = typeObj;
 			}
 			else {
-				report_error("Error: Name " + node.getTypeName() + " doesn't represent type. ", node);
+				report_error("Error: Name " + node.getTypeName() + " doesn't represent type ", node);
 			}
 		}
 	}
@@ -73,9 +77,36 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(DesignatorNode node){
 		Obj obj = Tab.find(node.getName());
 		if (obj == Tab.noObj) {
-			report_error("Error: Name " + node.getName() + " has not been declared! ", node);
+			report_error("Error: Name " + node.getName() + " has not been declared ", node);
 		}
 		node.obj = obj;
+	}
+
+	public void visit(DesignatorIndexNode node){
+		if(node.getDesignator().obj.getType().getKind() != Struct.Array){
+			report_error("Error: Name " + node.getDesignator().obj.getName() + " is not an array ", node);
+		}
+		if(node.getExpr().obj.getType() != Tab.intType){
+			report_error("Error: Index of array must be int ", node);
+		}
+	}
+	public void visit(DesignatorChainNode node){
+		node.obj = Tab.noObj;
+		if(node.getDesignator().obj.getType() == TabExtension.enumType){
+			Iterator<Obj>  it = node.getDesignator().obj.getLocalSymbols().iterator();
+			boolean enumConstFound = false;
+			while(it.hasNext() && !enumConstFound){
+				Obj localSymbol = it.next();
+				if(localSymbol.getName().equals(node.getName())){
+					enumConstFound = true;
+					node.obj = localSymbol;
+				}
+			}
+			if(!enumConstFound){
+				report_error("Error: Enum " + node.getDesignator().obj.getName() + " doesn't have defined value for " + node.getName() + " ", node);
+			}
+		}
+		else report_error("Error: Invalid use of dot operator. ", node);
 	}
 	// ########## [E] Designator ##########
 
@@ -86,7 +117,7 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 	public void visit(ConstDeclNode node){
 		if(checkIfSymbolExists(node.getConstName())){
-			report_error("Error: Name " + node.getConstName() + " already defined. ", node);
+			report_error("Error: Name " + node.getConstName() + " already defined ", node);
 			node.obj = Tab.noObj;
 			return;
 		}
@@ -103,7 +134,12 @@ public class SemanticPass extends VisitorAdaptor {
 			constValue = (int) charConstNode.getValue();
 			constType = Tab.charType;
 		}
-		else report_error("Error: Constant type and constant value mismatch. ", node);
+		else if(value instanceof BoolConstNode && currentConstType.obj.getType() == TabExtension.boolType){
+			BoolConstNode boolConstNode = (BoolConstNode) value;
+			constValue = boolConstNode.getValue() ? 1 : 0;
+			constType = TabExtension.boolType;
+		}
+		else report_error("Error: Constant type and constant value mismatch ", node);
 		node.obj = Tab.insert(Obj.Con, node.getConstName(), constType);
 		node.obj.setAdr(constValue);
 	}
@@ -116,13 +152,65 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 	public void visit(VarDeclNode node){
 		if(checkIfSymbolExists(node.getVarName())){
-			report_error("Error: Name " + node.getVarName() + " already defined. ", node);
+			report_error("Error: Name " + node.getVarName() + " already defined ", node);
 			node.obj = Tab.noObj;
 			return;
 		}
-		node.obj = Tab.insert(Obj.Var, node.getVarName(), currentVarType.obj.getType());
+		if(currentVarType.obj.getType() != TabExtension.enumType){
+			node.obj = Tab.insert(Obj.Var, node.getVarName(), currentVarType.obj.getType());
+		}
+		else{
+			node.obj = Tab.insert(Obj.Var, node.getVarName(), Tab.intType);
+		}
 	}
 	// ########## [E] Variables ##########
+
+    // ########## [S] Enums ##########
+    Obj currentEnum;
+    int currEnumVal = 0;
+    public void visit(EnumDeclNode node){
+        if(checkIfSymbolExists(node.getEnumName())){
+            report_error("Error: Name " + node.getEnumName() + " already defined ", node);
+            node.obj = Tab.noObj;
+        }
+        else{
+            node.obj = Tab.insert(Obj.Type, node.getEnumName(), TabExtension.enumType);
+        }
+        currentEnum = node.obj;
+        Tab.openScope();
+		currEnumVal = 0;
+    }
+    public void visit(EnumConstDeclNode node){
+        if(checkIfSymbolExists(node.getEnumConstName())){
+            report_error("Error: Name " + node.getEnumConstName() + " already defined ", node);
+            node.obj = Tab.noObj;
+            return;
+        }
+        int value;
+        OptEnumConstValue enumConstValue = node.getOptEnumConstValue();
+        if(enumConstValue instanceof OptEnumConstValueNode){
+			OptEnumConstValueNode optEnumConstValueNode = (OptEnumConstValueNode) enumConstValue;
+			if(optEnumConstValueNode.getValue() > currEnumVal){
+				value = optEnumConstValueNode.getValue();
+				currEnumVal = value + 1;
+			}
+			else{
+				value = currEnumVal++;
+			}
+        }
+        else{
+			value = currEnumVal++;
+		}
+		node.obj = Tab.insert(Obj.Con, node.getEnumConstName(), Tab.intType);
+		node.obj.setAdr(value);
+    }
+	public void visit(EnumNode node){
+		Tab.chainLocalSymbols(currentEnum);
+		Tab.closeScope();
+		currentEnum = null;
+		currEnumVal = 0;
+	}
+    // ########## [E] Enums ##########
 
 	// ########## [S] Expressions ##########
 	public void visit(FactorConstNode node){
@@ -138,6 +226,11 @@ public class SemanticPass extends VisitorAdaptor {
 			CharConstNode charConstNode = (CharConstNode) value;
 			constValue = (int) charConstNode.getValue();
 			constType = Tab.charType;
+		}
+		else if(value instanceof BoolConstNode){
+			BoolConstNode boolConstNode = (BoolConstNode) value;
+			constValue = boolConstNode.getValue()? 1 : 0;
+			constType = TabExtension.boolType;
 		}
 		node.obj = new Obj(Obj.Con, "$", constType);
 		node.obj.setAdr(constValue);
@@ -156,7 +249,7 @@ public class SemanticPass extends VisitorAdaptor {
 			node.obj = new Obj(Obj.NO_VALUE, "$", Tab.intType);
 		}
 		else{
-			report_error("Error: Multiplication/Division/Modulo done on something other than int. ", node);
+			report_error("Error: Multiplication/Division/Modulo done on something other than int ", node);
 			node.obj = Tab.noObj;
 		}
 	}
@@ -168,21 +261,15 @@ public class SemanticPass extends VisitorAdaptor {
 			node.obj = new Obj(Obj.NO_VALUE, "$", Tab.intType);
 		}
 		else{
-			report_error("Error: Addition/Subtraction done on something other than int. ", node);
+			report_error("Error: Addition/Subtraction done on something other than int ", node);
 			node.obj = Tab.noObj;
 		}
 	}
 	public void visit(DesignatorStmtAssignNode node){
+    	Struct s = node.getExpr().obj.getType();
+    	if(s==null) log.info("JSAHDLSAJFGBLJASHBFHABFLAHJDBHAFBLAKDS");
 		if(!node.getExpr().obj.getType().assignableTo(node.getDesignator().obj.getType())){
-			report_error("Error: Source is not assignable to destination. ", node);
-		}
-	}
-	public void visit(DesignatorIndexNode node){
-		if(node.getDesignator().obj.getType().getKind() != Struct.Array){
-			report_error("Error: Name " + node.getDesignator().obj.getName() + " is not an array. ", node);
-		}
-		if(node.getExpr().obj.getType() != Tab.intType){
-			report_error("Error: Index of array must be int. ", node);
+			report_error("Error: Source is not assignable to destination ", node);
 		}
 	}
 	public void visit(FactorCallNode node){
@@ -192,10 +279,13 @@ public class SemanticPass extends VisitorAdaptor {
 
 	// ########## [S] Methods ##########
 	Obj currentMethod = null;
+	Obj currentMethodCall = null;
 	boolean returnFound = false;
+	int currFpPos = 0;
+	int currActParNum = 0;
 	public void visit(MethodDeclNode node){
 		if(checkIfSymbolExists(node.getMethodName())){
-			report_error("Error: Name " + node.getMethodName() + " already defined. ", node);
+			report_error("Error: Name " + node.getMethodName() + " already defined ", node);
 			node.obj = Tab.noObj;
 		}
 		else{
@@ -204,19 +294,25 @@ public class SemanticPass extends VisitorAdaptor {
 				RetTypeNode typeNode = (RetTypeNode) node.getRetType();
 				retType = typeNode.getType().obj.getType();
 			}
+			if(retType == TabExtension.enumType){
+				retType = Tab.intType;
+			}
 			node.obj = Tab.insert(Obj.Meth, node.getMethodName(), retType);
 		}
 		currentMethod = node.obj;
 		Tab.openScope();
 		returnFound = false;
+		currFpPos = 0;
 	}
 	public void visit(MethodNode node){
 		if(currentMethod.getType() != Tab.noType && !returnFound){
-			report_error("Error: Method " + currentMethod.getName() + " doesn't have return statement. ", node);
+			report_error("Error: Method " + currentMethod.getName() + " doesn't have return statement ", node);
 		}
 		Tab.chainLocalSymbols(currentMethod);
 		Tab.closeScope();
+		currentMethod.setLevel(currFpPos);
 		currentMethod = null;
+		currFpPos = 0;
 	}
 	public void visit(ReturnStmtNode node){
 		returnFound = true;
@@ -225,25 +321,55 @@ public class SemanticPass extends VisitorAdaptor {
 			if(currentMethod.getType() != Tab.noType){
 				OptExprNode optExprNode = (OptExprNode) optExpr;
 				if(!optExprNode.getExpr().obj.getType().assignableTo(currentMethod.getType())){
-					report_error("Error: Return expression type doesn't match method return type. ", node);
+					report_error("Error: Return expression type doesn't match method return type ", node);
 				}
 			}
 			else {
-				report_error("Error: Cannot return an expression on method with return type void. ", node);
+				report_error("Error: Cannot return an expression on method with return type void ", node);
 			}
 		}
 		else if (optExpr instanceof NoOptExprNode){
 			if(currentMethod.getType() != Tab.noType){
-				report_error("Error: Return statement must have expression to return. ", node);
+				report_error("Error: Return statement must have expression to return ", node);
 			}
 		}
 	}
 	public void visit(MethodCallNode node){
-		if(node.getDesignator().obj.getKind() != Obj.Meth){
-			report_error("Error: Name " + node.getDesignator().obj.getName() + " is not a function. ", node);
+		if(currentMethodCall.getKind() != Obj.Meth){
+			report_error("Error: Name " + currentMethodCall.getName() + " is not a function ", node);
 			node.obj = Tab.noObj;
 		}
-		else node.obj = node.getDesignator().obj;
+		else {
+			node.obj = currentMethodCall;
+		}
+		if(currActParNum != currentMethodCall.getLevel()){
+			report_error("Error: Number of actual parameters is different than number of formal parameters ", node);
+		}
+	}
+	public void visit(FormParDeclNode node){
+		Struct type = node.getType().obj.getType();
+		if(type == TabExtension.enumType){
+			type = Tab.intType;
+		}
+		Obj parameter = Tab.insert(Obj.Var, node.getParName(), type);
+		parameter.setFpPos(++currFpPos);
+	}
+	public void visit(MethodCallDeclNode node){
+		node.obj = node.getDesignator().obj;
+		currentMethodCall = node.obj;
+		currActParNum = 0;
+	}
+	public void visit(ActParDeclNode node){
+		currActParNum++;
+		Iterator<Obj> it = currentMethodCall.getLocalSymbols().iterator();
+		while(it.hasNext()){
+			Obj localSymbol = it.next();
+			if(localSymbol.getFpPos() == currActParNum){
+				if(!node.getExpr().obj.getType().assignableTo(localSymbol.getType())){
+					report_error("Error: Actual parameter is not assignable to formal parameter ", node);
+				}
+			}
+		}
 	}
 	// ########## [E] Methods ##########
 }
