@@ -51,17 +51,15 @@ public class CodeGenerator extends VisitorAdaptor {
 	public void visit(DesignatorNode node) {
 		if(node.obj.getType() == TabExtension.enumType) return;
 		SyntaxNode parent = node.getParent();
-		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode)) {
-		    if(parent instanceof ReadStmtNode){
-		        if(node.obj.getType() == Tab.intType || node.obj.getType() == TabExtension.boolType){
-		            Code.put(Code.read);
-                }
-		        else if(node.obj.getType() == Tab.charType){
-                    Code.put(Code.bread);
-                }
-                Code.store(node.obj);
-            }
-			else Code.load(node.obj);
+		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode) && !(parent instanceof ReadStmtNode) && !(parent instanceof DesignatorStmtIncNode)&& !(parent instanceof DesignatorStmtDecNode)) {
+			Code.load(node.obj);
+		}
+	}
+
+	public void visit(DesignatorIndexNode node){
+		SyntaxNode parent = node.getParent();
+		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode) && !(parent instanceof ReadStmtNode)&& !(parent instanceof DesignatorStmtIncNode)&& !(parent instanceof DesignatorStmtDecNode)) {
+			Code.load(node.obj);
 		}
 	}
 
@@ -76,12 +74,16 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(DesignatorStmtIncNode node) {
+		Code.put(Code.dup2);
+		Code.load(node.getDesignator().obj);
 		Code.put(Code.const_1);
 		Code.put(Code.add);
 		Code.store(node.getDesignator().obj);
 	}
 
 	public void visit(DesignatorStmtDecNode node) {
+		Code.put(Code.dup2);
+		Code.load(node.getDesignator().obj);
 		Code.put(Code.const_1);
 		Code.put(Code.sub);
 		Code.store(node.getDesignator().obj);
@@ -135,4 +137,27 @@ public class CodeGenerator extends VisitorAdaptor {
 			Code.put(Code.bprint);
 		}
 	}
+
+	public void visit(ReadStmtNode node){
+		if(node.getDesignator().obj.getType() == Tab.intType || node.getDesignator().obj.getType() == TabExtension.boolType){
+			Code.put(Code.read);
+		}
+		else if(node.getDesignator().obj.getType() == Tab.charType){
+			Code.put(Code.bread);
+		}
+		Code.store(node.getDesignator().obj);
+	}
+
+
+    public void visit(FactorNewNode node){
+        if(node.getOptNewArray() instanceof OptNewArrayNode){
+            int b = 0;
+            Code.put(Code.newarray);
+            if(node.getType().obj.getType() == Tab.intType) b = 1;
+            Code.put(b);
+        }
+        else{
+            // KLASA...
+        }
+    }
 }

@@ -4,6 +4,7 @@ program MJProgram
 	enum days { mon = 1, tue = 3, wed}
 	const int T = 4;
 	const bool b = false;
+	int niz[];
 {
 	
 	days k (int a) int c; {
@@ -12,25 +13,13 @@ program MJProgram
 	}
 	
 	int main() {
-		y = 2;
-		x = y + 2;
-		y = (k(k(y)) + 3) * T;
-		y++;
-		x--;
-		print('y', 1);
-		print('=');
-		print(y);
+	    niz = new int[5];
+		niz[4] = 3;
+		niz[4]++;
+		print(niz[4]);
 		print(eol);
-		print(' ');
-		print('x');
-        print('=');
-		print(x);
-		print(' ');
-        print(10000);
-        print(b, 2);
-        print(' ');
-        read(c);
-        print(c);
+		read(niz[4]);
+		print(niz[4]);
 		return 0;
 	}
 }

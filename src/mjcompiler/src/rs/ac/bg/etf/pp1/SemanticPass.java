@@ -83,15 +83,6 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 		node.obj = obj;
 	}
-
-	public void visit(DesignatorIndexNode node){
-		if(node.getDesignator().obj.getType().getKind() != Struct.Array){
-			report_error("Error: Name " + node.getDesignator().obj.getName() + " is not an array ", node);
-		}
-		if(node.getExpr().obj.getType() != Tab.intType){
-			report_error("Error: Index of array must be int ", node);
-		}
-	}
 	public void visit(DesignatorChainNode node){
 		node.obj = Tab.noObj;
 		if(node.getDesignator().obj.getType() == TabExtension.enumType){
@@ -108,7 +99,16 @@ public class SemanticPass extends VisitorAdaptor {
 				report_error("Error: Enum " + node.getDesignator().obj.getName() + " doesn't have defined value for " + node.getName() + " ", node);
 			}
 		}
-		else report_error("Error: Invalid use of dot operator. ", node);
+		else report_error("Error: Invalid use of dot operator ", node);
+	}
+	public void visit(DesignatorIndexNode node){
+		if(node.getDesignator().obj.getType().getKind() != Struct.Array){
+			report_error("Error: Indexing must be done on array type ", node);
+		}
+		if(node.getExpr().obj.getType() != Tab.intType){
+			report_error("Error: Index of array must be int ", node);
+		}
+		node.obj = new Obj(Obj.Elem, "$elem", node.getDesignator().obj.getType().getElemType());
 	}
 	public void visit(ReadStmtNode node){
 		Designator readDesignator = node.getDesignator();
@@ -164,11 +164,17 @@ public class SemanticPass extends VisitorAdaptor {
 			node.obj = Tab.noObj;
 			return;
 		}
-		if(currentVarType.obj.getType() != TabExtension.enumType){
-			node.obj = Tab.insert(Obj.Var, node.getVarName(), currentVarType.obj.getType());
+		if(node.getBoxesOpt() instanceof BoxesNode){
+			Struct arrayType = TabExtension.resolveArrayType(currentVarType.obj.getType());
+			node.obj = Tab.insert(Obj.Var, node.getVarName(), arrayType);
 		}
 		else{
-			node.obj = Tab.insert(Obj.Var, node.getVarName(), Tab.intType);
+			if(currentVarType.obj.getType() != TabExtension.enumType){
+				node.obj = Tab.insert(Obj.Var, node.getVarName(), currentVarType.obj.getType());
+			}
+			else{
+				node.obj = Tab.insert(Obj.Var, node.getVarName(), Tab.intType);
+			}
 		}
 	}
 	// ########## [E] Variables ##########
@@ -274,14 +280,24 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 	}
 	public void visit(DesignatorStmtAssignNode node){
-    	Struct s = node.getExpr().obj.getType();
-    	if(s==null) log.info("JSAHDLSAJFGBLJASHBFHABFLAHJDBHAFBLAKDS");
 		if(!node.getExpr().obj.getType().assignableTo(node.getDesignator().obj.getType())){
 			report_error("Error: Source is not assignable to destination ", node);
 		}
 	}
 	public void visit(FactorCallNode node){
 		node.obj = node.getMethodCall().obj;
+	}
+	public void visit(FactorNewNode node){
+    	if(node.getOptNewArray() instanceof OptNewArrayNode){
+			OptNewArrayNode optNewArrayNode = (OptNewArrayNode)node.getOptNewArray();
+			if(optNewArrayNode.getExpr().obj.getType() != Tab.intType){
+				report_error("Error: Number of array elements must be int type ", node);
+			}
+			node.obj = new Obj(Obj.NO_VALUE, "$newArray", TabExtension.resolveArrayType(node.getType().obj.getType()));
+		}
+    	else{
+    		// KLASA....
+		}
 	}
 	// ########## [E] Expressions ##########
 
@@ -360,6 +376,9 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 	public void visit(FormParDeclNode node){
 		Struct type = node.getType().obj.getType();
+		if(node.getBoxesOpt() instanceof BoxesNode){
+			type = TabExtension.resolveArrayType(type);
+		}
 		if(type == TabExtension.enumType){
 			type = Tab.intType;
 		}
