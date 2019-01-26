@@ -9,6 +9,7 @@ import rs.ac.bg.etf.pp1.CounterVisitor.ActParamCounter;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Stack;
 
 public class SemanticPass extends VisitorAdaptor {
 
@@ -282,7 +283,10 @@ public class SemanticPass extends VisitorAdaptor {
 	Obj currentMethodCall = null;
 	boolean returnFound = false;
 	int currFpPos = 0;
-	int currActParNum = 0;
+	Stack<MethodCallContext> methodCallContextStack = new Stack<MethodCallContext>();
+	static class MethodCallContext{
+		public int currActParNum = 0;
+	}
 	public void visit(MethodDeclNode node){
 		if(checkIfSymbolExists(node.getMethodName())){
 			report_error("Error: Name " + node.getMethodName() + " already defined ", node);
@@ -342,9 +346,10 @@ public class SemanticPass extends VisitorAdaptor {
 		else {
 			node.obj = currentMethodCall;
 		}
-		if(currActParNum != currentMethodCall.getLevel()){
+		if(methodCallContextStack.peek().currActParNum != currentMethodCall.getLevel()){
 			report_error("Error: Number of actual parameters is different than number of formal parameters ", node);
 		}
+		methodCallContextStack.pop();
 	}
 	public void visit(FormParDeclNode node){
 		Struct type = node.getType().obj.getType();
@@ -357,14 +362,14 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(MethodCallDeclNode node){
 		node.obj = node.getDesignator().obj;
 		currentMethodCall = node.obj;
-		currActParNum = 0;
+		methodCallContextStack.push(new MethodCallContext());
 	}
 	public void visit(ActParDeclNode node){
-		currActParNum++;
+		methodCallContextStack.peek().currActParNum++;
 		Iterator<Obj> it = currentMethodCall.getLocalSymbols().iterator();
 		while(it.hasNext()){
 			Obj localSymbol = it.next();
-			if(localSymbol.getFpPos() == currActParNum){
+			if(localSymbol.getFpPos() == methodCallContextStack.peek().currActParNum){
 				if(!node.getExpr().obj.getType().assignableTo(localSymbol.getType())){
 					report_error("Error: Actual parameter is not assignable to formal parameter ", node);
 				}
