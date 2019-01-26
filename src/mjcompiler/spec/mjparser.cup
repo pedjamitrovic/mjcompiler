@@ -93,6 +93,8 @@ nonterminal FormPars;
 nonterminal FormParsList;
 nonterminal FormParDecl;
 nonterminal Statement;
+nonterminal IfDecl;
+nonterminal ElseDecl;
 nonterminal PrintOptNumFields;
 nonterminal StatementList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCall;
@@ -231,9 +233,9 @@ FormParDecl ::= (FormParDeclNode) Type IDENT:parName BoxesOpt
 
 Statement ::= (DesignatorStmtNode) DesignatorStatement SEMI
 			|
-			(IfStmtNode) IF LPAREN Condition RPAREN Statement
+			(IfStmtNode) IfDecl Statement
 			|
-			(IfElseStmtNode) IF LPAREN Condition RPAREN Statement ELSE Statement
+			(IfElseStmtNode) IfDecl Statement ElseDecl Statement
 			|
 			(ForStmtNode) FOR LPAREN OptDesignatorStatement SEMI OptCondition SEMI OptDesignatorStatement RPAREN Statement
 			|
@@ -251,6 +253,10 @@ Statement ::= (DesignatorStmtNode) DesignatorStatement SEMI
 			|
             (ErrorStmtNode) error:e SEMI {: parser.report_error("Invalid statement. ", null); :}
 			;
+
+IfDecl ::= (IfDeclNode) IF LPAREN Condition RPAREN;
+
+ElseDecl ::= (ElseDeclNode) ELSE;
 
 PrintOptNumFields ::= (PrintOptNumFieldsNode) COMMA NUM_CONST:value
                     |

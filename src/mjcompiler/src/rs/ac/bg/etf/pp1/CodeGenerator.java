@@ -7,6 +7,8 @@ import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 
+import java.util.Stack;
+
 public class CodeGenerator extends VisitorAdaptor {
 	
 	private int mainPc;
@@ -148,7 +150,6 @@ public class CodeGenerator extends VisitorAdaptor {
 		Code.store(node.getDesignator().obj);
 	}
 
-
     public void visit(FactorNewNode node){
         if(node.getOptNewArray() instanceof OptNewArrayNode){
             int b = 0;
@@ -160,4 +161,102 @@ public class CodeGenerator extends VisitorAdaptor {
             // KLASA...
         }
     }
+
+    public void visit(CondFactRelopNode node){
+		Relop op = node.getRelop();
+		if(op instanceof RelopEqNode){
+			Code.putFalseJump(Code.eq, Code.pc + 7);
+		}
+		if(op instanceof RelopNeqNode){
+			Code.putFalseJump(Code.ne, Code.pc + 7);
+		}
+		if(op instanceof RelopGtNode){
+			Code.putFalseJump(Code.gt, Code.pc + 7);
+		}
+		if(op instanceof RelopGteNode){
+			Code.putFalseJump(Code.ge, Code.pc + 7);
+		}
+		if(op instanceof RelopLtNode){
+			Code.putFalseJump(Code.lt, Code.pc + 7);
+		}
+		if(op instanceof RelopLteNode){
+			Code.putFalseJump(Code.le, Code.pc + 7);
+		}
+		Code.loadConst(1);
+		Code.putJump(Code.pc + 4);
+		Code.loadConst(0);
+	}
+
+	public void visit(ConditionOrNode node){
+		Code.loadConst(0);
+		Code.putFalseJump(Code.ne, Code.pc + 8);
+
+		//if(second != 0)
+		Code.put(Code.pop);
+		Code.loadConst(1);
+		Code.putJump(Code.pc + 12);
+
+		//else
+		Code.loadConst(0);
+		Code.putFalseJump(Code.ne, Code.pc + 7);
+
+		//if(first != 0)
+		Code.loadConst(1);
+		Code.putJump(Code.pc + 4);
+
+		//else
+		Code.loadConst(0);
+	}
+
+	public void visit(CondTermAndNode node){
+		Code.loadConst(1);
+		Code.putFalseJump(Code.ne, Code.pc + 8);
+
+		//if(second != 1)
+		Code.put(Code.pop);
+		Code.loadConst(0);
+		Code.putJump(Code.pc + 12);
+
+		//else
+		Code.loadConst(1);
+		Code.putFalseJump(Code.ne, Code.pc + 7);
+
+		//if(first != 1)
+		Code.loadConst(0);
+		Code.putJump(Code.pc + 4);
+
+		//else
+		Code.loadConst(1);
+	}
+
+	Stack<IfElseStatementContext> ifElseStatementContextStack = new Stack<>();
+	static class IfElseStatementContext{
+		public int jmpAddr = 0;
+	}
+
+	public void visit(IfDeclNode node){
+		Code.loadConst(0);
+		Code.putFalseJump(Code.ne, 0);
+		IfElseStatementContext ifElseStatementContext = new IfElseStatementContext();
+		ifElseStatementContext.jmpAddr = Code.pc - 2;
+		ifElseStatementContextStack.push(ifElseStatementContext);
+	}
+
+	public void visit(ElseDeclNode node)
+	{
+		Code.putJump(0);
+		int fixupAddr = ifElseStatementContextStack.pop().jmpAddr;
+		Code.fixup(fixupAddr);
+		IfElseStatementContext ifElseStatementContext = new IfElseStatementContext();
+		ifElseStatementContext.jmpAddr = Code.pc - 2;
+		ifElseStatementContextStack.push(ifElseStatementContext);
+	}
+	public void visit(IfStmtNode node) {
+		int fixupAddr = ifElseStatementContextStack.pop().jmpAddr;
+		Code.fixup(fixupAddr);
+	}
+	public void visit(IfElseStmtNode node) {
+		int fixupAddr = ifElseStatementContextStack.pop().jmpAddr;
+		Code.fixup(fixupAddr);
+	}
 }

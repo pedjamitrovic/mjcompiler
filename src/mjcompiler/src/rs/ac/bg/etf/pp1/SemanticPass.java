@@ -299,6 +299,11 @@ public class SemanticPass extends VisitorAdaptor {
     		// KLASA....
 		}
 	}
+	public void visit(CondFactRelopNode node){
+    	if(!node.getExpr().obj.getType().compatibleWith(node.getExpr1().obj.getType())){
+			report_error("Error: Cannot compare incompatible types ", node);
+		}
+	}
 	// ########## [E] Expressions ##########
 
 	// ########## [S] Methods ##########

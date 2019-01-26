@@ -1,25 +1,33 @@
 program MJProgram
 	int x, y;
-	char c;
 	enum days { mon = 1, tue = 3, wed}
 	const int T = 4;
-	const bool b = false;
 	int niz[];
 {
-	
 	days k (int a) int c; {
 		c = 1;
 		return c+a;
 	}
-	
 	int main() {
-	    niz = new int[5];
-		niz[4] = 3;
-		niz[4]++;
-		print(niz[4]);
-		print(eol);
-		read(niz[4]);
-		print(niz[4]);
+	    x = 0;
+	    if(x){
+	        print('o');
+	        print('k');
+	        print(1);
+	    }
+	    else{
+	        x = 3;
+	        if(x == 2){
+	            print('o');
+                print('k');
+                print(2);
+	        }
+	        else{
+	            print('o');
+                print('k');
+                print(3);
+	        }
+	    }
 		return 0;
 	}
 }
