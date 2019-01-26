@@ -52,7 +52,16 @@ public class CodeGenerator extends VisitorAdaptor {
 		if(node.obj.getType() == TabExtension.enumType) return;
 		SyntaxNode parent = node.getParent();
 		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode)) {
-			Code.load(node.obj);
+		    if(parent instanceof ReadStmtNode){
+		        if(node.obj.getType() == Tab.intType || node.obj.getType() == TabExtension.boolType){
+		            Code.put(Code.read);
+                }
+		        else if(node.obj.getType() == Tab.charType){
+                    Code.put(Code.bread);
+                }
+                Code.store(node.obj);
+            }
+			else Code.load(node.obj);
 		}
 	}
 

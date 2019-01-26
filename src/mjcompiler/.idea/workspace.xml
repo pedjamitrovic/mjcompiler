@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9731e04a-f571-44d6-b600-f6acd754f337" name="Default Changelist" comment="">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/CodeGenerator.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/CodeGenerator.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/program.mj" beforeDir="false" afterPath="$PROJECT_DIR$/test/program.mj" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/test/program.obj" beforeDir="false" afterPath="$PROJECT_DIR$/test/program.obj" afterDir="false" />
@@ -19,19 +20,50 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/spec/mjparser.cup">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="258">
-              <caret line="266" column="38" selection-start-line="266" selection-start-column="20" selection-end-line="266" selection-end-column="38" />
+            <state relative-caret-position="313">
+              <caret line="352" column="35" selection-start-line="352" selection-start-column="16" selection-end-line="352" selection-end-column="35" />
+            </state>
+          </provider>
+        </entry>
+      </file>
+      <file pinned="false" current-in-tab="true">
+        <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java">
+          <provider selected="true" editor-type-id="text-editor">
+            <state relative-caret-position="204">
+              <caret line="41" column="46" selection-start-line="41" selection-start-column="46" selection-end-line="41" selection-end-column="46" />
+              <folding>
+                <element signature="imports" expanded="true" />
+                <element signature="e#3608#3609#0" expanded="true" />
+                <element signature="e#3659#3660#0" expanded="true" />
+                <element signature="e#4989#4990#0" expanded="true" />
+                <element signature="e#5038#5039#0" expanded="true" />
+                <element signature="e#7884#7885#0" expanded="true" />
+                <element signature="e#7926#7927#0" expanded="true" />
+                <element signature="e#7967#7968#0" expanded="true" />
+                <element signature="e#8003#8004#0" expanded="true" />
+                <element signature="e#8038#8039#0" expanded="true" />
+                <element signature="e#8076#8077#0" expanded="true" />
+                <element signature="e#8448#8449#0" expanded="true" />
+                <element signature="e#8484#8485#0" expanded="true" />
+                <element signature="e#9183#9184#0" expanded="true" />
+                <element signature="e#9225#9226#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
       <file pinned="false" current-in-tab="false">
-        <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java">
+        <entry file="jar://$PROJECT_DIR$/lib/symboltable.jar!/rs/etf/pp1/symboltable/concepts/Scope.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="202">
-              <caret line="364" column="61" lean-forward="true" selection-start-line="364" selection-start-column="61" selection-end-line="364" selection-end-column="61" />
+            <state relative-caret-position="175">
+              <caret line="42" column="15" selection-start-line="42" selection-start-column="15" selection-end-line="42" selection-end-column="15" />
               <folding>
-                <element signature="imports" expanded="true" />
+                <element signature="e#605#606#0" expanded="true" />
+                <element signature="e#630#631#0" expanded="true" />
+                <element signature="e#959#960#0" expanded="true" />
+                <element signature="e#1024#1025#0" expanded="true" />
+                <element signature="e#1161#1162#0" expanded="true" />
+                <element signature="e#1181#1182#0" expanded="true" />
               </folding>
             </state>
           </provider>
@@ -40,20 +72,21 @@
       <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/CodeGenerator.java">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="491">
-              <caret line="60" column="32" selection-start-line="60" selection-start-column="32" selection-end-line="60" selection-end-column="32" />
+            <state relative-caret-position="-452">
+              <caret line="57" column="17" lean-forward="true" selection-start-line="57" selection-start-column="17" selection-end-line="57" selection-end-column="17" />
               <folding>
                 <element signature="imports" expanded="true" />
+                <element signature="e#2074#2075#0" expanded="true" />
               </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file pinned="false" current-in-tab="true">
+      <file pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/test/program.mj">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="170">
-              <caret line="10" column="5" lean-forward="true" selection-start-line="10" selection-start-column="5" selection-end-line="10" selection-end-column="5" />
+            <state relative-caret-position="136">
+              <caret line="8" column="19" lean-forward="true" selection-start-line="8" selection-start-column="19" selection-end-line="8" selection-end-column="25" />
             </state>
           </provider>
         </entry>
@@ -89,6 +122,7 @@
       <find>Invalid variable declaration</find>
       <find>defined valu</find>
       <find>Return exp</find>
+      <find>Print</find>
     </findStrings>
   </component>
   <component name="Git.Settings">
@@ -103,9 +137,11 @@
         <option value="$PROJECT_DIR$/test/rs/ac/bg/etf/pp1/MJTest.java" />
         <option value="$PROJECT_DIR$/spec/mjparser.cup" />
         <option value="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/TabExtension.java" />
+        <option value="$PROJECT_DIR$/mjava.bat" />
+        <option value="$PROJECT_DIR$/mjdisasm.bat" />
         <option value="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/CodeGenerator.java" />
-        <option value="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java" />
         <option value="$PROJECT_DIR$/test/program.mj" />
+        <option value="$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java" />
       </list>
     </option>
   </component>
@@ -123,7 +159,6 @@
     </navigator>
     <panes>
       <pane id="PackagesPane" />
-      <pane id="Scope" />
       <pane id="ProjectPane">
         <subPane>
           <expand>
@@ -134,32 +169,17 @@
             <path>
               <item name="mjcompiler" type="b2602c69:ProjectViewProjectNode" />
               <item name="mjcompiler" type="462c0819:PsiDirectoryNode" />
-              <item name="spec" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mjcompiler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mjcompiler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mjcompiler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mjcompiler" type="462c0819:PsiDirectoryNode" />
-              <item name="src" type="462c0819:PsiDirectoryNode" />
-              <item name="pp1" type="462c0819:PsiDirectoryNode" />
-            </path>
-            <path>
-              <item name="mjcompiler" type="b2602c69:ProjectViewProjectNode" />
-              <item name="mjcompiler" type="462c0819:PsiDirectoryNode" />
               <item name="test" type="462c0819:PsiDirectoryNode" />
             </path>
           </expand>
           <select />
         </subPane>
       </pane>
+      <pane id="Scope" />
     </panes>
   </component>
   <component name="PropertiesComponent">
-    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1548457566058" />
+    <property name="com.android.tools.idea.instantapp.provision.ProvisionBeforeRunTaskProvider.myTimeStamp" value="1548516111936" />
     <property name="last_opened_file_path" value="$PROJECT_DIR$/run.xml" />
     <property name="project.structure.last.edited" value="Project" />
     <property name="project.structure.proportion" value="0.15" />
@@ -233,7 +253,7 @@
     <frame x="-7" y="-7" width="1550" height="838" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.2442953" />
+      <window_info content_ui="combo" id="Project" order="0" visible="true" weight="0.24765101" />
       <window_info id="Structure" order="1" side_tool="true" weight="0.25" />
       <window_info id="Image Layers" order="2" />
       <window_info id="Designer" order="3" />
@@ -463,19 +483,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="jar://$PROJECT_DIR$/lib/symboltable.jar!/rs/etf/pp1/symboltable/concepts/Scope.java">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="731">
-          <caret line="54" column="31" selection-start-line="54" selection-start-column="31" selection-end-line="54" selection-end-column="31" />
-          <folding>
-            <element signature="e#605#606#0" expanded="true" />
-            <element signature="e#630#631#0" expanded="true" />
-            <element signature="e#1161#1162#0" expanded="true" />
-            <element signature="e#1181#1182#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/ast/ProgramDecl.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
@@ -483,18 +490,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/test/program.asm" />
     <entry file="jar://$PROJECT_DIR$/lib/mj-runtime.jar!/rs/etf/pp1/mj/runtime/Run.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-8706">
           <caret line="12" column="13" selection-start-line="12" selection-start-column="13" selection-end-line="12" selection-end-column="13" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/run.xml">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="238">
-          <caret line="14" column="38" selection-start-line="14" selection-start-column="38" selection-end-line="14" selection-end-column="38" />
         </state>
       </provider>
     </entry>
@@ -574,13 +573,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/spec/mjparser.cup">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="258">
-          <caret line="266" column="38" selection-start-line="266" selection-start-column="20" selection-end-line="266" selection-end-column="38" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/TabExtension.java">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="136">
@@ -591,30 +583,91 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/CodeGenerator.java">
+    <entry file="file://$PROJECT_DIR$/test/program.asm">
+      <provider selected="true" editor-type-id="text-editor" />
+    </entry>
+    <entry file="file://$PROJECT_DIR$/mjdisasm.bat">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="491">
-          <caret line="60" column="32" selection-start-line="60" selection-start-column="32" selection-end-line="60" selection-end-column="32" />
-          <folding>
-            <element signature="imports" expanded="true" />
-          </folding>
+        <state relative-caret-position="17">
+          <caret line="1" lean-forward="true" selection-start-line="1" selection-end-line="1" />
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java">
+    <entry file="file://$PROJECT_DIR$/mjava.bat">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="202">
-          <caret line="364" column="61" lean-forward="true" selection-start-line="364" selection-start-column="61" selection-end-line="364" selection-end-column="61" />
+        <state relative-caret-position="34">
+          <caret line="2" column="58" selection-start-line="2" selection-start-column="58" selection-end-line="2" selection-end-column="58" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/run.xml">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="85">
+          <caret line="5" column="24" lean-forward="true" selection-start-line="5" selection-start-column="24" selection-end-line="5" selection-end-column="40" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/spec/mjparser.cup">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="313">
+          <caret line="352" column="35" selection-start-line="352" selection-start-column="16" selection-end-line="352" selection-end-column="35" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/CodeGenerator.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="-452">
+          <caret line="57" column="17" lean-forward="true" selection-start-line="57" selection-start-column="17" selection-end-line="57" selection-end-column="17" />
           <folding>
             <element signature="imports" expanded="true" />
+            <element signature="e#2074#2075#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/test/program.mj">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="170">
-          <caret line="10" column="5" lean-forward="true" selection-start-line="10" selection-start-column="5" selection-end-line="10" selection-end-column="5" />
+        <state relative-caret-position="136">
+          <caret line="8" column="19" lean-forward="true" selection-start-line="8" selection-start-column="19" selection-end-line="8" selection-end-column="25" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="jar://$PROJECT_DIR$/lib/symboltable.jar!/rs/etf/pp1/symboltable/concepts/Scope.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="175">
+          <caret line="42" column="15" selection-start-line="42" selection-start-column="15" selection-end-line="42" selection-end-column="15" />
+          <folding>
+            <element signature="e#605#606#0" expanded="true" />
+            <element signature="e#630#631#0" expanded="true" />
+            <element signature="e#959#960#0" expanded="true" />
+            <element signature="e#1024#1025#0" expanded="true" />
+            <element signature="e#1161#1162#0" expanded="true" />
+            <element signature="e#1181#1182#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/src/rs/ac/bg/etf/pp1/SemanticPass.java">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="204">
+          <caret line="41" column="46" selection-start-line="41" selection-start-column="46" selection-end-line="41" selection-end-column="46" />
+          <folding>
+            <element signature="imports" expanded="true" />
+            <element signature="e#3608#3609#0" expanded="true" />
+            <element signature="e#3659#3660#0" expanded="true" />
+            <element signature="e#4989#4990#0" expanded="true" />
+            <element signature="e#5038#5039#0" expanded="true" />
+            <element signature="e#7884#7885#0" expanded="true" />
+            <element signature="e#7926#7927#0" expanded="true" />
+            <element signature="e#7967#7968#0" expanded="true" />
+            <element signature="e#8003#8004#0" expanded="true" />
+            <element signature="e#8038#8039#0" expanded="true" />
+            <element signature="e#8076#8077#0" expanded="true" />
+            <element signature="e#8448#8449#0" expanded="true" />
+            <element signature="e#8484#8485#0" expanded="true" />
+            <element signature="e#9183#9184#0" expanded="true" />
+            <element signature="e#9225#9226#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>

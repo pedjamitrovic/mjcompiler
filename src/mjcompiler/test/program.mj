@@ -1,5 +1,6 @@
 program MJProgram
 	int x, y;
+	char c;
 	enum days { mon = 1, tue = 3, wed}
 	const int T = 4;
 	const bool b = false;
@@ -19,6 +20,7 @@ program MJProgram
 		print('y', 1);
 		print('=');
 		print(y);
+		print(eol);
 		print(' ');
 		print('x');
         print('=');
@@ -26,6 +28,9 @@ program MJProgram
 		print(' ');
         print(10000);
         print(b, 2);
+        print(' ');
+        read(c);
+        print(c);
 		return 0;
 	}
 }

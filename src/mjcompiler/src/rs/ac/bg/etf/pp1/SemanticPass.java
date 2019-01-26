@@ -38,7 +38,8 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 
 	public boolean checkIfSymbolExists(String symbolName){
-		return Tab.find(symbolName) != Tab.noObj;
+		Obj obj = Tab.currentScope.findSymbol(symbolName);
+		return obj != null && obj != Tab.noObj;
 	}
 
 	// ########## [S] Program ##########
@@ -108,6 +109,12 @@ public class SemanticPass extends VisitorAdaptor {
 			}
 		}
 		else report_error("Error: Invalid use of dot operator. ", node);
+	}
+	public void visit(ReadStmtNode node){
+		Designator readDesignator = node.getDesignator();
+		if(!(readDesignator.obj.getType() == Tab.intType || readDesignator.obj.getType() == Tab.charType|| readDesignator.obj.getType() == TabExtension.boolType)){
+			report_error("Error: Parameter of read function must be int, char or bool ", node);
+		}
 	}
 	// ########## [E] Designator ##########
 
