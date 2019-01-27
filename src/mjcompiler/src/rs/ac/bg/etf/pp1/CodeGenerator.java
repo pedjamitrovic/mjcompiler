@@ -6,7 +6,9 @@ import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.mj.runtime.Code;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
+import rs.etf.pp1.symboltable.concepts.Struct;
 
+import java.util.ArrayList;
 import java.util.Stack;
 
 public class CodeGenerator extends VisitorAdaptor {
@@ -76,7 +78,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(DesignatorStmtIncNode node) {
-		Code.put(Code.dup2);
+		if(node.getDesignator().obj.getKind() == Obj.Elem) Code.put(Code.dup2);
 		Code.load(node.getDesignator().obj);
 		Code.put(Code.const_1);
 		Code.put(Code.add);
@@ -84,7 +86,7 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(DesignatorStmtDecNode node) {
-		Code.put(Code.dup2);
+		if(node.getDesignator().obj.getKind() == Obj.Elem) Code.put(Code.dup2);
 		Code.load(node.getDesignator().obj);
 		Code.put(Code.const_1);
 		Code.put(Code.sub);
@@ -118,10 +120,15 @@ public class CodeGenerator extends VisitorAdaptor {
 
 	public void visit(MethodCallNode node) {
 		Obj functionObj = node.getMethodCallDecl().obj;
+		if(functionObj.getName().equals("chr") || functionObj.getName().equals("ord")) return;
+		if(functionObj.getName().equals("len")){
+			Code.put(Code.arraylength);
+			return;
+		}
 		int offset = functionObj.getAdr() - Code.pc;
 		Code.put(Code.call);
 		Code.put2(offset);
-		if(node.getParent() instanceof DesignatorStmtCallNode){
+		if(node.getParent() instanceof DesignatorStmtCallNode && functionObj.getType() != Tab.noType){
 			Code.put(Code.pop);
 		}
 	}
@@ -141,11 +148,15 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 
 	public void visit(ReadStmtNode node){
-		if(node.getDesignator().obj.getType() == Tab.intType || node.getDesignator().obj.getType() == TabExtension.boolType){
-			Code.put(Code.read);
+		Struct type = node.getDesignator().obj.getType();
+		if(type.getKind() == Struct.Array){
+			type = type.getElemType();
 		}
-		else if(node.getDesignator().obj.getType() == Tab.charType){
+		if(type == Tab.charType){
 			Code.put(Code.bread);
+		}
+		else{
+			Code.put(Code.read);
 		}
 		Code.store(node.getDesignator().obj);
 	}
@@ -227,6 +238,69 @@ public class CodeGenerator extends VisitorAdaptor {
 
 		//else
 		Code.loadConst(1);
+	}
+
+	Stack<ForStatementContext> forStatementContextStack = new Stack<>();
+	static class ForStatementContext{
+		public boolean hasCondition = false;
+		public int optConditionFixup = 0;
+		public int bodyFixup = 0;
+		public int optDesignatorStmtAddr = 0;
+		public int optConditionAddr = 0;
+		public ArrayList<Integer> breakFixups = new ArrayList<>();
+	}
+
+	public void visit(ForDeclNode node){
+		ForStatementContext forStatementContext = new ForStatementContext();
+		forStatementContext.optConditionAddr = Code.pc;
+		forStatementContextStack.push(forStatementContext);
+	}
+
+	public void visit(OptConditionNode node){
+		ForStatementContext forStatementContext = forStatementContextStack.peek();
+		forStatementContext.hasCondition = true;
+		Code.loadConst(0);
+		Code.putFalseJump(Code.ne, 0);
+		forStatementContext.optConditionFixup = Code.pc - 2;
+		Code.putJump(0);
+		forStatementContext.bodyFixup = Code.pc - 2;
+		forStatementContext.optDesignatorStmtAddr = Code.pc;
+	}
+
+	public void visit(NoOptConditionNode node){
+		ForStatementContext forStatementContext = forStatementContextStack.peek();
+		Code.putJump(0);
+		forStatementContext.bodyFixup = Code.pc - 2;
+		forStatementContext.optDesignatorStmtAddr = Code.pc;
+	}
+
+	public void visit(PostForOptDesignatorStatementNode node){
+		ForStatementContext forStatementContext = forStatementContextStack.peek();
+		Code.putJump(forStatementContext.optConditionAddr);
+		Code.fixup(forStatementContext.bodyFixup);
+	}
+
+	public void visit(ForStmtNode node){
+		ForStatementContext forStatementContext = forStatementContextStack.peek();
+		Code.putJump(forStatementContext.optDesignatorStmtAddr);
+		if(forStatementContext.hasCondition) Code.fixup(forStatementContextStack.peek().optConditionFixup);
+		for(int i = 0; i < forStatementContext.breakFixups.size(); i++){
+			Code.fixup(forStatementContext.breakFixups.get(i));
+		}
+		forStatementContextStack.pop();
+	}
+
+	public void visit(BreakStmtNode node){
+		if(forStatementContextStack.empty()) return;
+		ForStatementContext forStatementContext = forStatementContextStack.peek();
+		Code.putJump(0);
+		forStatementContext.breakFixups.add(Code.pc - 2);
+	}
+
+	public void visit(ContinueStmtNode node){
+		if(forStatementContextStack.empty()) return;
+		ForStatementContext forStatementContext = forStatementContextStack.peek();
+		Code.putJump(forStatementContext.optDesignatorStmtAddr);
 	}
 
 	Stack<IfElseStatementContext> ifElseStatementContextStack = new Stack<>();

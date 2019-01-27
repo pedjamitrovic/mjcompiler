@@ -51,6 +51,7 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 
 	public void visit(ProgramNode node){
+		if(!mainFound) report_error("Function main not found in program ", null);
 		staticVarCount = Tab.currentScope.getnVars();
 		Tab.chainLocalSymbols(node.getProgramDecl().obj);
 		Tab.closeScope();
@@ -164,17 +165,16 @@ public class SemanticPass extends VisitorAdaptor {
 			node.obj = Tab.noObj;
 			return;
 		}
+		Struct type = currentVarType.obj.getType();
+		if(type == TabExtension.enumType){
+			type = Tab.intType;
+		}
 		if(node.getBoxesOpt() instanceof BoxesNode){
-			Struct arrayType = TabExtension.resolveArrayType(currentVarType.obj.getType());
+			Struct arrayType = TabExtension.resolveArrayType(type);
 			node.obj = Tab.insert(Obj.Var, node.getVarName(), arrayType);
 		}
 		else{
-			if(currentVarType.obj.getType() != TabExtension.enumType){
-				node.obj = Tab.insert(Obj.Var, node.getVarName(), currentVarType.obj.getType());
-			}
-			else{
-				node.obj = Tab.insert(Obj.Var, node.getVarName(), Tab.intType);
-			}
+			node.obj = Tab.insert(Obj.Var, node.getVarName(), type);
 		}
 	}
 	// ########## [E] Variables ##########
@@ -293,7 +293,11 @@ public class SemanticPass extends VisitorAdaptor {
 			if(optNewArrayNode.getExpr().obj.getType() != Tab.intType){
 				report_error("Error: Number of array elements must be int type ", node);
 			}
-			node.obj = new Obj(Obj.NO_VALUE, "$newArray", TabExtension.resolveArrayType(node.getType().obj.getType()));
+			Struct type = node.getType().obj.getType();
+			if(type == TabExtension.enumType){
+				type = Tab.intType;
+			}
+			node.obj = new Obj(Obj.NO_VALUE, "$newArray", TabExtension.resolveArrayType(type));
 		}
     	else{
     		// KLASA....
@@ -310,6 +314,7 @@ public class SemanticPass extends VisitorAdaptor {
 	Obj currentMethod = null;
 	Obj currentMethodCall = null;
 	boolean returnFound = false;
+	boolean mainFound = false;
 	int currFpPos = 0;
 	Stack<MethodCallContext> methodCallContextStack = new Stack<MethodCallContext>();
 	static class MethodCallContext{
@@ -337,14 +342,21 @@ public class SemanticPass extends VisitorAdaptor {
 		currFpPos = 0;
 	}
 	public void visit(MethodNode node){
+		if(currentMethod.getName().equals("main")){
+			if(currentMethod.getType() != Tab.noType) report_error("Error: Function \"main\" must have return type void ", node);
+			mainFound = true;
+		}
 		if(currentMethod.getType() != Tab.noType && !returnFound){
 			report_error("Error: Method " + currentMethod.getName() + " doesn't have return statement ", node);
 		}
 		Tab.chainLocalSymbols(currentMethod);
 		Tab.closeScope();
-		currentMethod.setLevel(currFpPos);
 		currentMethod = null;
 		currFpPos = 0;
+	}
+	public void visit(MethodSignatureNode node){
+		Tab.chainLocalSymbols(currentMethod);
+		currentMethod.setLevel(currFpPos);
 	}
 	public void visit(ReturnStmtNode node){
 		returnFound = true;
@@ -381,11 +393,11 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 	public void visit(FormParDeclNode node){
 		Struct type = node.getType().obj.getType();
-		if(node.getBoxesOpt() instanceof BoxesNode){
-			type = TabExtension.resolveArrayType(type);
-		}
 		if(type == TabExtension.enumType){
 			type = Tab.intType;
+		}
+		if(node.getBoxesOpt() instanceof BoxesNode){
+			type = TabExtension.resolveArrayType(type);
 		}
 		Obj parameter = Tab.insert(Obj.Var, node.getParName(), type);
 		parameter.setFpPos(++currFpPos);

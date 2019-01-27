@@ -93,6 +93,7 @@ nonterminal FormPars;
 nonterminal FormParsList;
 nonterminal FormParDecl;
 nonterminal Statement;
+nonterminal ForDecl;
 nonterminal IfDecl;
 nonterminal ElseDecl;
 nonterminal PrintOptNumFields;
@@ -102,6 +103,8 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj MethodCallDecl;
 nonterminal DesignatorStatement;
 nonterminal OptDesignatorStatement;
 nonterminal OptCondition;
+nonterminal PostForOptDesignatorStatement;
+nonterminal ForStatement;
 nonterminal ActPars;
 nonterminal ActParsList;
 nonterminal ActParDecl;
@@ -237,7 +240,7 @@ Statement ::= (DesignatorStmtNode) DesignatorStatement SEMI
 			|
 			(IfElseStmtNode) IfDecl Statement ElseDecl Statement
 			|
-			(ForStmtNode) FOR LPAREN OptDesignatorStatement SEMI OptCondition SEMI OptDesignatorStatement RPAREN Statement
+			(ForStmtNode) ForDecl SEMI OptCondition SEMI PostForOptDesignatorStatement RPAREN Statement
 			|
 			(BreakStmtNode) BREAK SEMI
 			|
@@ -253,6 +256,10 @@ Statement ::= (DesignatorStmtNode) DesignatorStatement SEMI
 			|
             (ErrorStmtNode) error:e SEMI {: parser.report_error("Invalid statement. ", null); :}
 			;
+
+ForDecl ::= (ForDeclNode) FOR LPAREN OptDesignatorStatement;
+
+PostForOptDesignatorStatement ::= (PostForOptDesignatorStatementNode) OptDesignatorStatement;
 
 IfDecl ::= (IfDeclNode) IF LPAREN Condition RPAREN;
 
