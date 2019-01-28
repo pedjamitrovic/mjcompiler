@@ -6,6 +6,7 @@ import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 import rs.ac.bg.etf.pp1.CounterVisitor.ActParamCounter;
+import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 import java.util.Collection;
 import java.util.Iterator;
@@ -47,14 +48,14 @@ public class SemanticPass extends VisitorAdaptor {
 
 	public void visit(ProgramDeclNode node){
 		node.obj = Tab.insert(Obj.Prog, node.getProgramName(), Tab.noType);
-		Tab.openScope();
+		TabExtension.openScope(Obj.Var);
 	}
 
 	public void visit(ProgramNode node){
 		if(!mainFound) report_error("Function main not found in program ", null);
 		staticVarCount = Tab.currentScope.getnVars();
 		Tab.chainLocalSymbols(node.getProgramDecl().obj);
-		Tab.closeScope();
+		TabExtension.closeScope();
 	}
 	// ########## [E] Program ##########
 
@@ -100,7 +101,17 @@ public class SemanticPass extends VisitorAdaptor {
 				report_error("Error: Enum " + node.getDesignator().obj.getName() + " doesn't have defined value for " + node.getName() + " ", node);
 			}
 		}
-		else report_error("Error: Invalid use of dot operator ", node);
+		else {
+			Struct designatorType = node.getDesignator().obj.getType();
+			if(designatorType.getKind() != Struct.Class){
+				report_error("Error: Designator of dot operator must be variable of class type or enum type ", node);
+			}
+			Obj obj = designatorType.getMembers().searchKey(node.getName());
+			if(obj == null){
+				report_error("Error: Member " + node.getName() + " doesn't exist ", node);
+			}
+			else node.obj = obj;
+		}
 	}
 	public void visit(DesignatorIndexNode node){
 		if(node.getDesignator().obj.getType().getKind() != Struct.Array){
@@ -171,10 +182,10 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 		if(node.getBoxesOpt() instanceof BoxesNode){
 			Struct arrayType = TabExtension.resolveArrayType(type);
-			node.obj = Tab.insert(Obj.Var, node.getVarName(), arrayType);
+			node.obj = TabExtension.insert(node.getVarName(), arrayType);
 		}
 		else{
-			node.obj = Tab.insert(Obj.Var, node.getVarName(), type);
+			node.obj = TabExtension.insert(node.getVarName(), type);
 		}
 	}
 	// ########## [E] Variables ##########
@@ -191,7 +202,7 @@ public class SemanticPass extends VisitorAdaptor {
             node.obj = Tab.insert(Obj.Type, node.getEnumName(), TabExtension.enumType);
         }
         currentEnum = node.obj;
-        Tab.openScope();
+        TabExtension.openScope(Obj.Con);
 		currEnumVal = 0;
     }
     public void visit(EnumConstDeclNode node){
@@ -215,12 +226,12 @@ public class SemanticPass extends VisitorAdaptor {
         else{
 			value = currEnumVal++;
 		}
-		node.obj = Tab.insert(Obj.Con, node.getEnumConstName(), Tab.intType);
+		node.obj = TabExtension.insert(node.getEnumConstName(), Tab.intType);
 		node.obj.setAdr(value);
     }
 	public void visit(EnumNode node){
 		Tab.chainLocalSymbols(currentEnum);
-		Tab.closeScope();
+		TabExtension.closeScope();
 		currentEnum = null;
 		currEnumVal = 0;
 	}
@@ -250,7 +261,10 @@ public class SemanticPass extends VisitorAdaptor {
 		node.obj.setAdr(constValue);
 	}
 	public void visit(FactorDesignatorNode node){
-		node.obj = node.getDesignator().obj;
+        node.obj = node.getDesignator().obj;
+        if(node.obj.getKind() == Obj.Meth){
+            report_error("Error: Name " + node.obj.getName() + " is a method, not variable ", node);
+        }
 	}
 	public void visit(FactorExprNode node){
 		node.obj = node.getExpr().obj;
@@ -300,7 +314,12 @@ public class SemanticPass extends VisitorAdaptor {
 			node.obj = new Obj(Obj.NO_VALUE, "$newArray", TabExtension.resolveArrayType(type));
 		}
     	else{
-    		// KLASA....
+			Struct type = TabExtension.findClassType(node.getType().obj.getName());
+			if(type == Tab.noType){
+				report_error("Error: Class name must be provided after keyword new ", node);
+				node.obj = Tab.noObj;
+			}
+			else node.obj = new Obj(Obj.Var, "$newType", type);
 		}
 	}
 	public void visit(CondFactRelopNode node){
@@ -316,7 +335,7 @@ public class SemanticPass extends VisitorAdaptor {
 	boolean returnFound = false;
 	boolean mainFound = false;
 	int currFpPos = 0;
-	Stack<MethodCallContext> methodCallContextStack = new Stack<MethodCallContext>();
+	Stack<MethodCallContext> methodCallContextStack = new Stack<>();
 	static class MethodCallContext{
 		public int currActParNum = 0;
 	}
@@ -337,9 +356,13 @@ public class SemanticPass extends VisitorAdaptor {
 			node.obj = Tab.insert(Obj.Meth, node.getMethodName(), retType);
 		}
 		currentMethod = node.obj;
-		Tab.openScope();
+		TabExtension.openScope(Obj.Var);
 		returnFound = false;
 		currFpPos = 0;
+		if(currentClass != null){
+			Obj parameter = TabExtension.insert("this", currentClass.getType());
+			parameter.setFpPos(++currFpPos);
+		}
 	}
 	public void visit(MethodNode node){
 		if(currentMethod.getName().equals("main")){
@@ -350,7 +373,7 @@ public class SemanticPass extends VisitorAdaptor {
 			report_error("Error: Method " + currentMethod.getName() + " doesn't have return statement ", node);
 		}
 		Tab.chainLocalSymbols(currentMethod);
-		Tab.closeScope();
+		TabExtension.closeScope();
 		currentMethod = null;
 		currFpPos = 0;
 	}
@@ -399,13 +422,16 @@ public class SemanticPass extends VisitorAdaptor {
 		if(node.getBoxesOpt() instanceof BoxesNode){
 			type = TabExtension.resolveArrayType(type);
 		}
-		Obj parameter = Tab.insert(Obj.Var, node.getParName(), type);
+		Obj parameter = TabExtension.insert(node.getParName(), type);
 		parameter.setFpPos(++currFpPos);
 	}
 	public void visit(MethodCallDeclNode node){
 		node.obj = node.getDesignator().obj;
 		currentMethodCall = node.obj;
 		methodCallContextStack.push(new MethodCallContext());
+		if(node.getDesignator() instanceof DesignatorChainNode || currentClass != null){
+            if(!node.obj.getName().equals("ord") && !node.obj.getName().equals("chr") && !node.obj.getName().equals("len")) methodCallContextStack.peek().currActParNum++;
+        }
 	}
 	public void visit(ActParDeclNode node){
 		methodCallContextStack.peek().currActParNum++;
@@ -420,5 +446,33 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 	}
 	// ########## [E] Methods ##########
+
+	// ########## [E] Classes ##########
+	Obj currentClass = null;
+	public void visit(ClassDeclNode node){
+		node.obj = Tab.noObj;
+		if(checkIfSymbolExists(node.getName())){
+			report_error("Error: Name " + node.getName() + " already defined ", node);
+		}
+		else{
+			node.obj = Tab.insert(Obj.Type, node.getName(), TabExtension.resolveClassType(node.getName()));
+		}
+		currentClass = node.obj;
+		TabExtension.openScope(Obj.Fld);
+		Tab.chainLocalSymbols(currentClass.getType());
+	}
+	public void visit(ClassDefNode node){
+		Tab.chainLocalSymbols(currentClass.getType());
+		TabExtension.closeScope();
+		currentClass = null;
+	}
+	public void visit(FieldSectListNode node){
+        Tab.chainLocalSymbols(currentClass.getType());
+    }
+	// ########## [E] Classes ##########
+
+	// ########## [E] Interfaces ##########
+
+	// ########## [E] Interfaces ##########
 }
 

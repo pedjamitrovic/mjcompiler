@@ -19,6 +19,14 @@ public class CodeGenerator extends VisitorAdaptor {
 		return mainPc;
 	}
 
+
+	boolean inClass = false;
+	public void visit(ClassDeclNode node){
+		inClass = true;
+	}
+	public void visit(ClassDefNode node){
+		inClass = false;
+	}
 	public void visit(MethodDeclNode node) {
 		if (node.getMethodName().equals("main")) {
 			mainPc = Code.pc;
@@ -31,6 +39,8 @@ public class CodeGenerator extends VisitorAdaptor {
 		methodNode.traverseTopDown(varCnt);
 		FormParamCounter fpCnt = new FormParamCounter();
 		methodNode.traverseTopDown(fpCnt);
+
+		if(inClass) fpCnt.count++;
 
 		// Generate the entry.
 		Code.put(Code.enter);
@@ -54,6 +64,9 @@ public class CodeGenerator extends VisitorAdaptor {
 
 	public void visit(DesignatorNode node) {
 		if(node.obj.getType() == TabExtension.enumType) return;
+		if(inClass && (node.obj.getKind() == Obj.Fld || node.obj.getKind() == Obj.Meth)){
+			if(!node.obj.getName().equals("ord") && !node.obj.getName().equals("chr") && !node.obj.getName().equals("len")) Code.put(Code.load_n);
+		}
 		SyntaxNode parent = node.getParent();
 		if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode) && !(parent instanceof ReadStmtNode) && !(parent instanceof DesignatorStmtIncNode)&& !(parent instanceof DesignatorStmtDecNode)) {
 			Code.load(node.obj);
@@ -71,6 +84,12 @@ public class CodeGenerator extends VisitorAdaptor {
 		if(node.getDesignator().obj.getType() == TabExtension.enumType){
 			Code.load(node.obj);
 		}
+		else{
+			SyntaxNode parent = node.getParent();
+			if (!(parent instanceof DesignatorStmtAssignNode) && !(parent instanceof MethodCallDeclNode) && !(parent instanceof ReadStmtNode)&& !(parent instanceof DesignatorStmtIncNode)&& !(parent instanceof DesignatorStmtDecNode)) {
+				Code.load(node.obj);
+			}
+		}
 	}
 
 	public void visit(DesignatorStmtAssignNode node) {
@@ -79,6 +98,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
 	public void visit(DesignatorStmtIncNode node) {
 		if(node.getDesignator().obj.getKind() == Obj.Elem) Code.put(Code.dup2);
+		if(node.getDesignator().obj.getKind() == Obj.Fld) Code.put(Code.dup);
 		Code.load(node.getDesignator().obj);
 		Code.put(Code.const_1);
 		Code.put(Code.add);
@@ -87,6 +107,7 @@ public class CodeGenerator extends VisitorAdaptor {
 
 	public void visit(DesignatorStmtDecNode node) {
 		if(node.getDesignator().obj.getKind() == Obj.Elem) Code.put(Code.dup2);
+		if(node.getDesignator().obj.getKind() == Obj.Fld) Code.put(Code.dup);
 		Code.load(node.getDesignator().obj);
 		Code.put(Code.const_1);
 		Code.put(Code.sub);
@@ -169,7 +190,8 @@ public class CodeGenerator extends VisitorAdaptor {
             Code.put(b);
         }
         else{
-            // KLASA...
+			Code.put(Code.new_);
+            Code.put2(node.getType().obj.getType().getNumberOfFields()*4);
         }
     }
 

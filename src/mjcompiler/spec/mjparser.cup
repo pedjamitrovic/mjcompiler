@@ -82,6 +82,18 @@ nonterminal rs.etf.pp1.symboltable.concepts.Obj EnumDecl;
 nonterminal EnumConstList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj EnumConstDecl;
 nonterminal OptEnumConstValue;
+nonterminal FieldSectList;
+nonterminal FieldSect;
+nonterminal OptMethodList;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ClassDef;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj ClassDecl;
+nonterminal ClassExtends;
+nonterminal ClassImplements;
+nonterminal ITypeList;
+nonterminal ImplementsType;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj InterfaceDef;
+nonterminal InterfaceDecl;
+nonterminal InterfaceMethodList;
 nonterminal MethodList;
 nonterminal VarSectList;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj Method;
@@ -104,7 +116,6 @@ nonterminal DesignatorStatement;
 nonterminal OptDesignatorStatement;
 nonterminal OptCondition;
 nonterminal PostForOptDesignatorStatement;
-nonterminal ForStatement;
 nonterminal ActPars;
 nonterminal ActParsList;
 nonterminal ActParDecl;
@@ -140,6 +151,10 @@ SectDecl ::= (ConstDeclarationsNode) ConstSect
 			(VarDeclarationsNode) VarSect
 			|
 			(EnumDeclarationsNode) Enumeration
+			|
+            (ClassDefsNode) ClassDef
+            |
+            (InterfaceDefsNode) InterfaceDef
 			;
 
 ConstSect ::= (ConstSectNode) ConstSectDecl ConstList SEMI;
@@ -191,6 +206,52 @@ EnumConstDecl ::= (EnumConstDeclNode) IDENT:enumConstName OptEnumConstValue;
 OptEnumConstValue ::= (OptEnumConstValueNode) ASSIGN NUM_CONST:value
                     |
                     (NoOptEnumConstValueNode)  /* epsilon */
+                    ;
+
+FieldSectList ::= (FieldSectListNode) FieldSectList FieldSect
+                |
+                (NoFieldSectListNode) /* epsilon */
+                |
+                (ErrorFieldSectListNode) error:e
+                ;
+
+FieldSect ::= (FieldSectNode) VarSectDecl VarList SEMI;
+
+OptMethodList ::= (OptMethodListNode) LBRACE MethodList RBRACE
+                |
+                (NoOptMethodList) /* epsilon */
+                ;
+
+ClassDef ::= (ClassDefNode) ClassDecl ClassExtends ClassImplements LBRACE FieldSectList OptMethodList RBRACE;
+
+ClassDecl ::= (ClassDeclNode) CLASS IDENT:name;
+
+ClassExtends ::= (ClassExtendsNode) EXTENDS Type
+                |
+                (NoClassExtendsNode)  /* epsilon */
+                |
+                (ErrorClassExtendsNode)  error:e
+                ;
+
+ClassImplements ::= (ClassImplementsNode) IMPLEMENTS ITypeList
+                |
+                (NoClassImplementsNode) /* epsilon */
+                ;
+
+ITypeList ::= (ITypeListNode) ITypeList COMMA ImplementsType
+            |
+            (ITypeNode) ImplementsType
+            ;
+
+ImplementsType ::= (ImplementsTypeNode) Type;
+
+InterfaceDef ::= (InterfaceDefNode) InterfaceDecl LBRACE InterfaceMethodList RBRACE;
+
+InterfaceDecl ::= (InterfaceDeclNode) INTERFACE IDENT:name;
+
+InterfaceMethodList ::= (InterfaceMethodListNode) InterfaceMethodList MethodSignature SEMI
+                    |
+                    (InterfaceMethodNode) MethodSignature SEMI
                     ;
 
 MethodList ::= (MethodListNode) MethodList Method
