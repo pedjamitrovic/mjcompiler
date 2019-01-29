@@ -1,5 +1,7 @@
 program Program
-class A
+interface I1{ int m(int a, char b); }
+interface I2{ int n(int a, char b); }
+class A implements I1, I2
 {
     int x;
     int y;
@@ -15,6 +17,12 @@ class A
             poruka = new char[5]; poruka[0] = 'P'; poruka[1] = 'o'; poruka[2] = 'z'; poruka[3] = 'z'; poruka[4] = '!';
             for(i = 0; i < len(poruka); i++) print(poruka[i]);
             print(eol);
+        }
+        int m(int a, char b){
+            return 1;
+        }
+        int n(int a, char b){
+            return 1;
         }
     }
 }

@@ -3,9 +3,7 @@ package rs.ac.bg.etf.pp1;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
-import rs.etf.pp1.symboltable.structure.HashTableDataStructure;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.Stack;
 

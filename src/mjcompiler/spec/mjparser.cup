@@ -92,7 +92,7 @@ nonterminal ClassImplements;
 nonterminal ITypeList;
 nonterminal ImplementsType;
 nonterminal rs.etf.pp1.symboltable.concepts.Obj InterfaceDef;
-nonterminal InterfaceDecl;
+nonterminal rs.etf.pp1.symboltable.concepts.Obj InterfaceDecl;
 nonterminal InterfaceMethodList;
 nonterminal MethodList;
 nonterminal VarSectList;

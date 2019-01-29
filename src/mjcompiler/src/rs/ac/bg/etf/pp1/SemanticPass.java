@@ -10,6 +10,7 @@ import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.LinkedList;
 import java.util.Stack;
 
 public class SemanticPass extends VisitorAdaptor {
@@ -359,8 +360,9 @@ public class SemanticPass extends VisitorAdaptor {
 		TabExtension.openScope(Obj.Var);
 		returnFound = false;
 		currFpPos = 0;
-		if(currentClass != null){
-			Obj parameter = TabExtension.insert("this", currentClass.getType());
+		if(currentClass != null || currentInterface != null){
+			Struct currType = currentClass != null ? currentClass.getType() : currentInterface.getType();
+			Obj parameter = TabExtension.insert("this", currType);
 			parameter.setFpPos(++currFpPos);
 		}
 	}
@@ -378,8 +380,11 @@ public class SemanticPass extends VisitorAdaptor {
 		currFpPos = 0;
 	}
 	public void visit(MethodSignatureNode node){
-		Tab.chainLocalSymbols(currentMethod);
 		currentMethod.setLevel(currFpPos);
+		Tab.chainLocalSymbols(currentMethod);
+		if(currentInterface != null){
+			TabExtension.closeScope();
+		}
 	}
 	public void visit(ReturnStmtNode node){
 		returnFound = true;
@@ -449,6 +454,7 @@ public class SemanticPass extends VisitorAdaptor {
 
 	// ########## [E] Classes ##########
 	Obj currentClass = null;
+	LinkedList<Obj> currentClassImplementsList = new LinkedList<>();
 	public void visit(ClassDeclNode node){
 		node.obj = Tab.noObj;
 		if(checkIfSymbolExists(node.getName())){
@@ -464,15 +470,85 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(ClassDefNode node){
 		Tab.chainLocalSymbols(currentClass.getType());
 		TabExtension.closeScope();
+		CheckImplementsList();
 		currentClass = null;
+		currentClassImplementsList.clear();
 	}
 	public void visit(FieldSectListNode node){
         Tab.chainLocalSymbols(currentClass.getType());
     }
+    public void visit(ImplementsTypeNode node){
+		if(TabExtension.findInterfaceType(node.getType().obj.getName()) == Tab.noType){
+			if(node.getType().obj != Tab.noObj) report_error("Error: Class " + currentClass.getName() + " implements " + node.getType().obj.getName() + " which is not an interface ", null);
+		}
+		else {
+			currentClass.getType().getMembers().insertKey(Tab.find(node.getType().obj.getName()));
+			currentClassImplementsList.add(Tab.find(node.getType().obj.getName()));
+		}
+	}
+    private void CheckImplementsList(){
+		Iterator<Obj> interfaceIterator = currentClassImplementsList.iterator();
+		while(interfaceIterator.hasNext()){
+			Obj currentInterface = interfaceIterator.next();
+			Iterator<Obj> interfaceMethodIterator = currentInterface.getType().getMembers().symbols().iterator();
+			while(interfaceMethodIterator.hasNext()){
+				Obj currentInterfaceMethod = interfaceMethodIterator.next();
+				Iterator<Obj> currentClassMethodIterator = currentClass.getType().getMembers().symbols().iterator();
+				boolean foundInterfaceMethod = false;
+				while(currentClassMethodIterator.hasNext() && !foundInterfaceMethod){
+					Obj currentClassMethod = currentClassMethodIterator.next();
+					if(currentClassMethod.getKind() != Obj.Meth) continue;
+					if(currentClassMethod.getName().equals(currentInterfaceMethod.getName())){
+						foundInterfaceMethod = true;
+						if(currentClassMethod.getLevel() != currentInterfaceMethod.getLevel()){
+							report_error("Error: Method " + currentClassMethod.getName() + " in class " + currentClass.getName() + " doesn't have same number of formal parameters as in implemented interface " + currentInterface.getName() + " ", null);
+						}
+						else{
+							Iterator<Obj> currentInterfaceMethodParamIterator = currentInterfaceMethod.getLocalSymbols().iterator();
+							Iterator<Obj> currentClassMethodParamIterator = currentClassMethod.getLocalSymbols().iterator();
+							boolean foundWrongParamType = false;
+							while(currentInterfaceMethodParamIterator.hasNext() && !foundWrongParamType){
+								Obj currentInterfaceMethodParam = currentInterfaceMethodParamIterator.next();
+								Obj currentClassMethodParam = currentClassMethodParamIterator.next();
+								if(currentInterfaceMethodParam.getName().equals("this")) continue;
+								if(!currentInterfaceMethodParam.getType().equals(currentClassMethodParam.getType())){
+									foundWrongParamType = true;
+									report_error("Error: Method " + currentClassMethod.getName() + " in class " + currentClass.getName() + " doesn't have same type of formal parameters as in implemented interface " + currentInterface.getName() + " ", null);
+								}
+							}
+						}
+						if(!currentClassMethod.getType().assignableTo(currentInterfaceMethod.getType())){
+							report_error("Error: Method " + currentClassMethod.getName() + " in class " + currentClass.getName() + " doesn't have assignable return type to type defined in implemented interface " + currentInterface.getName() + " ", null);
+						}
+					}
+				}
+				if(!foundInterfaceMethod){
+					report_error("Error: Method " + currentInterfaceMethod.getName() + " is not implemented in class " + currentClass.getName() + " ", null);
+				}
+			}
+		}
+	}
 	// ########## [E] Classes ##########
 
 	// ########## [E] Interfaces ##########
-
+	Obj currentInterface = null;
+	public void visit(InterfaceDeclNode node){
+		node.obj = Tab.noObj;
+		if(checkIfSymbolExists(node.getName())){
+			report_error("Error: Name " + node.getName() + " already defined ", node);
+		}
+		else{
+			node.obj = Tab.insert(Obj.Type, node.getName(), TabExtension.resolveInterfaceType(node.getName()));
+		}
+        currentInterface = node.obj;
+		Tab.openScope();
+		Tab.chainLocalSymbols(currentInterface.getType());
+	}
+	public void visit(InterfaceDefNode node){
+		Tab.chainLocalSymbols(currentInterface.getType());
+		Tab.closeScope();
+        currentInterface = null;
+	}
 	// ########## [E] Interfaces ##########
 }
 

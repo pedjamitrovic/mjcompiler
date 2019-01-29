@@ -21,13 +21,21 @@ public class CodeGenerator extends VisitorAdaptor {
 
 
 	boolean inClass = false;
+	boolean inInterface = false;
 	public void visit(ClassDeclNode node){
 		inClass = true;
 	}
 	public void visit(ClassDefNode node){
 		inClass = false;
 	}
+	public void visit(InterfaceDeclNode node){
+		inInterface = true;
+	}
+	public void visit(InterfaceDefNode node){
+		inInterface = false;
+	}
 	public void visit(MethodDeclNode node) {
+		if (inInterface) return;
 		if (node.getMethodName().equals("main")) {
 			mainPc = Code.pc;
 		}
