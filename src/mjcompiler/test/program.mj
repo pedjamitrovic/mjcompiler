@@ -1,49 +1,26 @@
 program Program
-interface I1{ int mFunc(int a, char b); }
-interface I2{ int nFunc(int a, char b); }
-class B {
-    int a;
-    int b;
-    {
-        int func(){
-            return this.b;
-        }
-    }
-}
-class A extends B implements I1, I2
+interface I1{ int mFunc(int a, char b); } interface I2{ int nFunc(int a, char b); }
+class Base
 {
     int x;
+    { int baseFunc(){ return 1; } }
+}
+class Derived extends Base implements I1, I2
+{
     int y;
     int z;
     {
-        void setZ(char c) int i; char poruka[]; {
-            if(c == 'x'){
-                this.z = x;
-            }
-            else if(c == 'y'){
-                z = this.y;
-            }
-            poruka = new char[5]; poruka[0] = 'P'; poruka[1] = 'o'; poruka[2] = 'z'; poruka[3] = 'z'; poruka[4] = '!';
-            for(i = 0; i < len(poruka); i++) print(poruka[i]);
-            print(eol);
-        }
-        int mFunc(int a, char b){
-            return 1;
-        }
-        int nFunc(int a, char b){
-            return 1;
-        }
+        int mFunc(int a, char b){ return 1; }
+        int nFunc(int a, char b){ return 1; }
     }
 }
-A a;
+Base b; Derived d; I1 i;
 {
     void main()
     {
-        a = new A;
-        a.x = 1;
-        a.y = 2;
-        a.b = 999899;
-        a.setZ('y');
-        print(a.func());
+        d = new Derived;
+        b = d;
+        i = d;
+        print(d.baseFunc());
     }
 }

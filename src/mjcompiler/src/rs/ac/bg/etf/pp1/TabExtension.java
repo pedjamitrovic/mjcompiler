@@ -19,6 +19,9 @@ public class TabExtension {
     public static int currTypeCounter = 6;
 
     public static boolean AssignableTo(Struct src, Struct dst){
+        if(src.getMembers().numSymbols() == 0 && dst.getMembers().numSymbols() == 0 &&
+            src.getKind() == Struct.Class && dst.getKind() == Struct.Class
+        ) return false; // Prazne klase
         if(src.assignableTo(dst)) return true;
         Struct currSrc = src;
         while(currSrc != null){

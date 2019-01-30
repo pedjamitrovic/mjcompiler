@@ -404,7 +404,7 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 	public void visit(MethodCallNode node){
 		if(currentMethodCall.getKind() != Obj.Meth){
-			report_error("Error: Name " + currentMethodCall.getName() + " is not a function ", node);
+			report_error("Error: Non existing function call ", node);
 			node.obj = Tab.noObj;
 		}
 		else {
