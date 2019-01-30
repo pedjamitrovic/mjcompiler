@@ -1,7 +1,16 @@
 program Program
-interface I1{ int m(int a, char b); }
-interface I2{ int n(int a, char b); }
-class A implements I1, I2
+interface I1{ int mFunc(int a, char b); }
+interface I2{ int nFunc(int a, char b); }
+class B {
+    int a;
+    int b;
+    {
+        int func(){
+            return this.b;
+        }
+    }
+}
+class A extends B implements I1, I2
 {
     int x;
     int y;
@@ -18,10 +27,10 @@ class A implements I1, I2
             for(i = 0; i < len(poruka); i++) print(poruka[i]);
             print(eol);
         }
-        int m(int a, char b){
+        int mFunc(int a, char b){
             return 1;
         }
-        int n(int a, char b){
+        int nFunc(int a, char b){
             return 1;
         }
     }
@@ -33,7 +42,8 @@ A a;
         a = new A;
         a.x = 1;
         a.y = 2;
+        a.b = 999899;
         a.setZ('y');
-        print(a.z);
+        print(a.func());
     }
 }

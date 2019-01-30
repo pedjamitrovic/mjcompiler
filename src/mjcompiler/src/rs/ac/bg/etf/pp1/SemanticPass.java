@@ -5,10 +5,7 @@ import rs.ac.bg.etf.pp1.ast.*;
 import rs.etf.pp1.symboltable.Tab;
 import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
-import rs.ac.bg.etf.pp1.CounterVisitor.ActParamCounter;
-import rs.etf.pp1.symboltable.structure.SymbolDataStructure;
 
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Stack;
@@ -43,7 +40,6 @@ public class SemanticPass extends VisitorAdaptor {
 		Obj obj = Tab.currentScope.findSymbol(symbolName);
 		return obj != null && obj != Tab.noObj;
 	}
-
 	// ########## [S] Program ##########
 	int staticVarCount;
 
@@ -295,7 +291,7 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 	}
 	public void visit(DesignatorStmtAssignNode node){
-		if(!node.getExpr().obj.getType().assignableTo(node.getDesignator().obj.getType())){
+		if(!TabExtension.AssignableTo(node.getExpr().obj.getType(), node.getDesignator().obj.getType())){
 			report_error("Error: Source is not assignable to destination ", node);
 		}
 	}
@@ -392,7 +388,7 @@ public class SemanticPass extends VisitorAdaptor {
 		if(optExpr instanceof OptExprNode){
 			if(currentMethod.getType() != Tab.noType){
 				OptExprNode optExprNode = (OptExprNode) optExpr;
-				if(!optExprNode.getExpr().obj.getType().assignableTo(currentMethod.getType())){
+				if(!TabExtension.AssignableTo(optExprNode.getExpr().obj.getType(), currentMethod.getType())){
 					report_error("Error: Return expression type doesn't match method return type ", node);
 				}
 			}
@@ -444,7 +440,7 @@ public class SemanticPass extends VisitorAdaptor {
 		while(it.hasNext()){
 			Obj localSymbol = it.next();
 			if(localSymbol.getFpPos() == methodCallContextStack.peek().currActParNum){
-				if(!node.getExpr().obj.getType().assignableTo(localSymbol.getType())){
+				if(!TabExtension.AssignableTo(node.getExpr().obj.getType(), localSymbol.getType())){
 					report_error("Error: Actual parameter is not assignable to formal parameter ", node);
 				}
 			}
@@ -455,6 +451,7 @@ public class SemanticPass extends VisitorAdaptor {
 	// ########## [E] Classes ##########
 	Obj currentClass = null;
 	LinkedList<Obj> currentClassImplementsList = new LinkedList<>();
+	Obj currentClassExtends = null;
 	public void visit(ClassDeclNode node){
 		node.obj = Tab.noObj;
 		if(checkIfSymbolExists(node.getName())){
@@ -465,7 +462,6 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 		currentClass = node.obj;
 		TabExtension.openScope(Obj.Fld);
-		Tab.chainLocalSymbols(currentClass.getType());
 	}
 	public void visit(ClassDefNode node){
 		Tab.chainLocalSymbols(currentClass.getType());
@@ -477,13 +473,35 @@ public class SemanticPass extends VisitorAdaptor {
 	public void visit(FieldSectListNode node){
         Tab.chainLocalSymbols(currentClass.getType());
     }
+	public void visit(ClassExtendsNode node){
+		Tab.insert(Obj.Type, "$extendsType", node.getType().obj.getType());
+		Tab.chainLocalSymbols(currentClass.getType());
+		if(node.getType().obj.getName().equals(currentClass.getName())){
+			report_error("Error: Class can't extend itself ", null);
+		}
+		if(TabExtension.findClassType(node.getType().obj.getName()) == Tab.noType){
+			if(node.getType().obj != Tab.noObj) report_error("Error: Class " + currentClass.getName() + " extends " + node.getType().obj.getName() + " which is not a class ", null);
+		}
+		Iterator<Obj> symbolIterator = node.getType().obj.getType().getMembers().symbols().iterator();
+		while(symbolIterator.hasNext()){
+			Obj symbol = symbolIterator.next();
+			if(symbol.getKind() == Obj.Fld){
+				Tab.insert(symbol.getKind(), symbol.getName(), symbol.getType());
+			}
+			else if(symbol.getKind() == Obj.Meth){
+				currentClass.getType().getMembers().insertKey(symbol);
+			}
+		}
+	}
     public void visit(ImplementsTypeNode node){
 		if(TabExtension.findInterfaceType(node.getType().obj.getName()) == Tab.noType){
 			if(node.getType().obj != Tab.noObj) report_error("Error: Class " + currentClass.getName() + " implements " + node.getType().obj.getName() + " which is not an interface ", null);
 		}
 		else {
-			currentClass.getType().getMembers().insertKey(Tab.find(node.getType().obj.getName()));
-			currentClassImplementsList.add(Tab.find(node.getType().obj.getName()));
+			Obj interfaceObj = Tab.find(node.getType().obj.getName());
+			Obj obj = new Obj(Obj.Type, "$implementsType-" + interfaceObj.getName(), interfaceObj.getType());
+			Tab.currentScope.addToLocals(obj);
+			currentClassImplementsList.add(obj);
 		}
 	}
     private void CheckImplementsList(){
@@ -517,7 +535,7 @@ public class SemanticPass extends VisitorAdaptor {
 								}
 							}
 						}
-						if(!currentClassMethod.getType().assignableTo(currentInterfaceMethod.getType())){
+						if(!TabExtension.AssignableTo(currentClassMethod.getType(), currentInterfaceMethod.getType())){
 							report_error("Error: Method " + currentClassMethod.getName() + " in class " + currentClass.getName() + " doesn't have assignable return type to type defined in implemented interface " + currentInterface.getName() + " ", null);
 						}
 					}
