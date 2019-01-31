@@ -3,7 +3,7 @@ interface I1{ int mFunc(int a, char b); } interface I2{ int nFunc(int a, char b)
 class Base
 {
     int x;
-    { int baseFunc(){ return 1; } }
+    { char baseFunc(){ return 'b'; } }
 }
 class Derived extends Base implements I1, I2
 {
@@ -12,6 +12,7 @@ class Derived extends Base implements I1, I2
     {
         int mFunc(int a, char b){ return 1; }
         int nFunc(int a, char b){ return 1; }
+        char baseFunc(){ return 'd'; }
     }
 }
 Base b; Derived d; I1 i;
@@ -21,6 +22,7 @@ Base b; Derived d; I1 i;
         d = new Derived;
         b = d;
         i = d;
-        print(d.baseFunc());
+        print('b'); print(' '); print('-'); print('>'); print(' '); print(b.baseFunc()); print(eol);
+        print('d'); print(' '); print('-'); print('>'); print(' '); print(d.baseFunc());
     }
 }

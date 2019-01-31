@@ -41,7 +41,7 @@ public class SemanticPass extends VisitorAdaptor {
 		return obj != null && obj != Tab.noObj;
 	}
 	// ########## [S] Program ##########
-	int staticVarCount;
+	public int staticVarCount;
 
 	public void visit(ProgramDeclNode node){
 		node.obj = Tab.insert(Obj.Prog, node.getProgramName(), Tab.noType);
@@ -338,8 +338,22 @@ public class SemanticPass extends VisitorAdaptor {
 	}
 	public void visit(MethodDeclNode node){
 		if(checkIfSymbolExists(node.getMethodName())){
-			report_error("Error: Name " + node.getMethodName() + " already defined ", node);
-			node.obj = Tab.noObj;
+			if(currentClassExtends != null && currentClassExtends.getType().getMembers().searchKey(node.getMethodName()) != null){
+				Tab.currentScope().getLocals().deleteKey(node.getMethodName());
+				Struct retType = Tab.noType;
+				if(node.getRetType() instanceof RetTypeNode){
+					RetTypeNode typeNode = (RetTypeNode) node.getRetType();
+					retType = typeNode.getType().obj.getType();
+				}
+				if(retType == TabExtension.enumType){
+					retType = Tab.intType;
+				}
+				node.obj = Tab.insert(Obj.Meth, node.getMethodName(), retType);
+			}
+			else {
+				report_error("Error: Name " + node.getMethodName() + " already defined ", node);
+				node.obj = Tab.noObj;
+			}
 		}
 		else{
 			Struct retType = Tab.noType;
@@ -360,10 +374,11 @@ public class SemanticPass extends VisitorAdaptor {
 			Struct currType = currentClass != null ? currentClass.getType() : currentInterface.getType();
 			Obj parameter = TabExtension.insert("this", currType);
 			parameter.setFpPos(++currFpPos);
+			currentMethod.setFpPos(-1);
 		}
 	}
 	public void visit(MethodNode node){
-		if(currentMethod.getName().equals("main")){
+		if(currentMethod.getName().equals("main") && currentClass == null){
 			if(currentMethod.getType() != Tab.noType) report_error("Error: Function \"main\" must have return type void ", node);
 			mainFound = true;
 		}
@@ -462,12 +477,14 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 		currentClass = node.obj;
 		TabExtension.openScope(Obj.Fld);
+		Obj obj = TabExtension.insert("$vtp", Tab.intType);
 	}
 	public void visit(ClassDefNode node){
 		Tab.chainLocalSymbols(currentClass.getType());
 		TabExtension.closeScope();
 		CheckImplementsList();
 		currentClass = null;
+		currentClassExtends = null;
 		currentClassImplementsList.clear();
 	}
 	public void visit(FieldSectListNode node){
@@ -482,10 +499,11 @@ public class SemanticPass extends VisitorAdaptor {
 		if(TabExtension.findClassType(node.getType().obj.getName()) == Tab.noType){
 			if(node.getType().obj != Tab.noObj) report_error("Error: Class " + currentClass.getName() + " extends " + node.getType().obj.getName() + " which is not a class ", null);
 		}
+		currentClassExtends = node.getType().obj;
 		Iterator<Obj> symbolIterator = node.getType().obj.getType().getMembers().symbols().iterator();
 		while(symbolIterator.hasNext()){
 			Obj symbol = symbolIterator.next();
-			if(symbol.getKind() == Obj.Fld){
+			if(symbol.getKind() == Obj.Fld && !symbol.getName().equals("$vtp")){
 				Tab.insert(symbol.getKind(), symbol.getName(), symbol.getType());
 			}
 			else if(symbol.getKind() == Obj.Meth){

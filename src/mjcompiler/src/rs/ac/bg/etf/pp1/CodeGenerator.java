@@ -9,25 +9,80 @@ import rs.etf.pp1.symboltable.concepts.Obj;
 import rs.etf.pp1.symboltable.concepts.Struct;
 
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.Stack;
 
 public class CodeGenerator extends VisitorAdaptor {
 	
 	private int mainPc;
-	
+	boolean inClass = false;
+	boolean inInterface = false;
+
+	public CodeGenerator(int staticVarCount){
+		vtpCurrAdr = staticVarCount;
+	}
+
 	public int getMainPc() {
 		return mainPc;
 	}
 
+	public class VirtualTable{
+		public int startAdr = -1;
+		public ArrayList<Obj> classMethods = new ArrayList<>();
+	}
 
-	boolean inClass = false;
-	boolean inInterface = false;
+	public int vtpCurrAdr = -1;
+	public ArrayList<VirtualTable> virtualTables = new ArrayList<>();
+
+	private void initVirtualTable(){
+		Iterator<VirtualTable> virtualTableIterator = virtualTables.iterator();
+		while(virtualTableIterator.hasNext()){
+			VirtualTable virtualTable = virtualTableIterator.next();
+			int currAdr = virtualTable.startAdr;
+			Iterator<Obj> classMethodIterator = virtualTable.classMethods.iterator();
+			while(classMethodIterator.hasNext()){
+				Obj classMethod = classMethodIterator.next();
+				String classMethodName = classMethod.getName();
+				for(int i = 0; i < classMethodName.length(); i++){
+					System.out.print(" " + currAdr + " -> " + classMethodName.charAt(i));
+					Code.loadConst(classMethodName.charAt(i));
+					Code.put(Code.putstatic);
+					Code.put2(currAdr++);
+				}
+				System.out.print(" " + currAdr + " -> -1");
+				Code.loadConst(-1);
+				Code.put(Code.putstatic);
+				Code.put2(currAdr++);
+				System.out.print(" " + currAdr + " -> " + classMethod.getAdr());
+				Code.loadConst(classMethod.getAdr());
+				Code.put(Code.putstatic);
+				Code.put2(currAdr++);
+			}
+			System.out.print(" " + currAdr + " -> -2");
+			Code.loadConst(-2);
+			Code.put(Code.putstatic);
+			Code.put2(currAdr++);
+			System.out.println();
+		}
+	}
 	public void visit(ClassDeclNode node){
 		inClass = true;
+		VirtualTable virtualTable = new VirtualTable();
+		virtualTable.startAdr = vtpCurrAdr;
+		node.obj.setAdr(vtpCurrAdr);
+		Iterator<Obj> classSymbolsIterator = node.obj.getType().getMembers().symbols().iterator();
+		while(classSymbolsIterator.hasNext()){
+			Obj classSymbol = classSymbolsIterator.next();
+			if(classSymbol.getKind() == Obj.Meth){
+				virtualTable.classMethods.add(classSymbol);
+				vtpCurrAdr += classSymbol.getName().length();
+				vtpCurrAdr += 2; // -1 i adr
+			}
+		}
+		vtpCurrAdr += 1; // -2
+		virtualTables.add(virtualTable);
 	}
-	public void visit(ClassDefNode node){
-		inClass = false;
-	}
+	public void visit(ClassDefNode node){ inClass = false; }
 	public void visit(InterfaceDeclNode node){
 		inInterface = true;
 	}
@@ -36,8 +91,9 @@ public class CodeGenerator extends VisitorAdaptor {
 	}
 	public void visit(MethodDeclNode node) {
 		if (inInterface) return;
-		if (node.getMethodName().equals("main")) {
+		if (node.getMethodName().equals("main") && !inClass) {
 			mainPc = Code.pc;
+			initVirtualTable();
 		}
 		node.obj.setAdr(Code.pc);
 
@@ -154,12 +210,29 @@ public class CodeGenerator extends VisitorAdaptor {
 			Code.put(Code.arraylength);
 			return;
 		}
-		int offset = functionObj.getAdr() - Code.pc;
-		Code.put(Code.call);
-		Code.put2(offset);
-		if(node.getParent() instanceof DesignatorStmtCallNode && functionObj.getType() != Tab.noType){
-			Code.put(Code.pop);
+		if(functionObj.getFpPos() == -1) {
+			node.getMethodCallDecl().traverseBottomUp(this);
+			Code.put(Code.getfield);
+			Code.put2(0); // $vtp
+			Code.put(Code.invokevirtual);
+			String functionName = functionObj.getName();
+			for(int i = 0; i < functionName.length(); i++){
+				Code.put4(functionName.charAt(i));
+			}
+			Code.put4(-1);
+			if(node.getParent() instanceof DesignatorStmtCallNode && functionObj.getType() != Tab.noType){
+				Code.put(Code.pop);
+			}
 		}
+		else{
+			int offset = functionObj.getAdr() - Code.pc;
+			Code.put(Code.call);
+			Code.put2(offset);
+			if(node.getParent() instanceof DesignatorStmtCallNode && functionObj.getType() != Tab.noType){
+				Code.put(Code.pop);
+			}
+		}
+
 	}
 
 	public void visit(PrintStmtNode node) {
@@ -200,6 +273,10 @@ public class CodeGenerator extends VisitorAdaptor {
         else{
 			Code.put(Code.new_);
             Code.put2(node.getType().obj.getType().getNumberOfFields()*4);
+            Code.put(Code.dup);
+            Code.loadConst(node.getType().obj.getAdr()); // start vtp
+            Code.put(Code.putfield);
+            Code.put2(0);
         }
     }
 
@@ -346,8 +423,7 @@ public class CodeGenerator extends VisitorAdaptor {
 		ifElseStatementContextStack.push(ifElseStatementContext);
 	}
 
-	public void visit(ElseDeclNode node)
-	{
+	public void visit(ElseDeclNode node) {
 		Code.putJump(0);
 		int fixupAddr = ifElseStatementContextStack.pop().jmpAddr;
 		Code.fixup(fixupAddr);

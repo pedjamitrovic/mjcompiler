@@ -57,9 +57,9 @@ public class MJTest {
 	        		objFile.delete();
 	        	
 	        	// Code generation...
-	        	CodeGenerator codeGenerator = new CodeGenerator();
+	        	CodeGenerator codeGenerator = new CodeGenerator(semanticCheck.staticVarCount);
 	        	prog.traverseBottomUp(codeGenerator);
-	        	Code.dataSize = semanticCheck.staticVarCount;
+	        	Code.dataSize = codeGenerator.vtpCurrAdr;
 	        	Code.mainPc = codeGenerator.getMainPc();
 	        	Code.write(new FileOutputStream(objFile));
 	        	log.info("Parsing successfuly done");
