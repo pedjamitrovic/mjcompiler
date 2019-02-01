@@ -44,25 +44,25 @@ public class CodeGenerator extends VisitorAdaptor {
 				Obj classMethod = classMethodIterator.next();
 				String classMethodName = classMethod.getName();
 				for(int i = 0; i < classMethodName.length(); i++){
-					System.out.print(" " + currAdr + " -> " + classMethodName.charAt(i));
+					//System.out.print(" " + currAdr + " -> " + classMethodName.charAt(i));
 					Code.loadConst(classMethodName.charAt(i));
 					Code.put(Code.putstatic);
 					Code.put2(currAdr++);
 				}
-				System.out.print(" " + currAdr + " -> -1");
+				//System.out.print(" " + currAdr + " -> -1");
 				Code.loadConst(-1);
 				Code.put(Code.putstatic);
 				Code.put2(currAdr++);
-				System.out.print(" " + currAdr + " -> " + classMethod.getAdr());
+				//System.out.print(" " + currAdr + " -> " + classMethod.getAdr());
 				Code.loadConst(classMethod.getAdr());
 				Code.put(Code.putstatic);
 				Code.put2(currAdr++);
 			}
-			System.out.print(" " + currAdr + " -> -2");
+			//System.out.print(" " + currAdr + " -> -2");
 			Code.loadConst(-2);
 			Code.put(Code.putstatic);
 			Code.put2(currAdr++);
-			System.out.println();
+			//System.out.println();
 		}
 	}
 	public void visit(ClassDeclNode node){
@@ -93,7 +93,6 @@ public class CodeGenerator extends VisitorAdaptor {
 		if (inInterface) return;
 		if (node.getMethodName().equals("main") && !inClass) {
 			mainPc = Code.pc;
-			initVirtualTable();
 		}
 		node.obj.setAdr(Code.pc);
 
@@ -110,6 +109,7 @@ public class CodeGenerator extends VisitorAdaptor {
 		Code.put(Code.enter);
 		Code.put(fpCnt.getCount());
 		Code.put(varCnt.getCount() + fpCnt.getCount());
+		if (node.getMethodName().equals("main") && !inClass) initVirtualTable();
 	}
 
 	public void visit(ReturnStmtNode node) {
@@ -265,13 +265,13 @@ public class CodeGenerator extends VisitorAdaptor {
 
     public void visit(FactorNewNode node){
         if(node.getOptNewArray() instanceof OptNewArrayNode){
-            int b = 0;
+        	int b = 1;
+			if(node.getType().obj.getType() == Tab.charType) b = 0;
             Code.put(Code.newarray);
-            if(node.getType().obj.getType() == Tab.intType) b = 1;
             Code.put(b);
         }
         else{
-			Code.put(Code.new_);
+        	Code.put(Code.new_);
             Code.put2(node.getType().obj.getType().getNumberOfFields()*4);
             Code.put(Code.dup);
             Code.loadConst(node.getType().obj.getAdr()); // start vtp
