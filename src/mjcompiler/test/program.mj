@@ -52,7 +52,6 @@ class Kvadar extends Predmet
 		}
 	}
 }
-
 int zapreminaK, zapreminaS;
 int tezinaK, tezinaS;
 {

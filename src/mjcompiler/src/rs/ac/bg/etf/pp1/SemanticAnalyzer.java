@@ -10,7 +10,7 @@ import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.Stack;
 
-public class SemanticPass extends VisitorAdaptor {
+public class SemanticAnalyzer extends VisitorAdaptor {
 
 	Logger log = Logger.getLogger(getClass());
 
@@ -477,7 +477,7 @@ public class SemanticPass extends VisitorAdaptor {
 		}
 		currentClass = node.obj;
 		TabExtension.openScope(Obj.Fld);
-		Obj obj = TabExtension.insert("vtp", Tab.intType);
+		Obj obj = TabExtension.insert("$vtp", Tab.intType);
 	}
 	public void visit(ClassDefNode node){
 		Tab.chainLocalSymbols(currentClass.getType());
@@ -503,7 +503,7 @@ public class SemanticPass extends VisitorAdaptor {
 		Iterator<Obj> symbolIterator = node.getType().obj.getType().getMembers().symbols().iterator();
 		while(symbolIterator.hasNext()){
 			Obj symbol = symbolIterator.next();
-			if(symbol.getKind() == Obj.Fld && !symbol.getName().equals("vtp")){
+			if(symbol.getKind() == Obj.Fld && !symbol.getName().equals("$vtp")){
 				Tab.insert(symbol.getKind(), symbol.getName(), symbol.getType());
 			}
 			else if(symbol.getKind() == Obj.Meth){
