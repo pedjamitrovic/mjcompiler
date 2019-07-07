@@ -328,7 +328,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 
 	// ########## [S] Methods ##########
 	Obj currentMethod = null;
-	Obj currentMethodCall = null;
+	Stack<Obj> currentMethodCallStack = new Stack<>();
 	boolean returnFound = false;
 	boolean mainFound = false;
 	int currFpPos = 0;
@@ -418,17 +418,18 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 		}
 	}
 	public void visit(MethodCallNode node){
-		if(currentMethodCall.getKind() != Obj.Meth){
+		if(currentMethodCallStack.peek().getKind() != Obj.Meth){
 			report_error("Error: Non existing function call ", node);
 			node.obj = Tab.noObj;
 		}
 		else {
-			node.obj = currentMethodCall;
+			node.obj = currentMethodCallStack.peek();
 		}
-		if(methodCallContextStack.peek().currActParNum != currentMethodCall.getLevel()){
+		if(methodCallContextStack.peek().currActParNum != currentMethodCallStack.peek().getLevel()){
 			report_error("Error: Number of actual parameters is different than number of formal parameters ", node);
 		}
 		methodCallContextStack.pop();
+		currentMethodCallStack.pop();
 	}
 	public void visit(FormParDeclNode node){
 		Struct type = node.getType().obj.getType();
@@ -443,7 +444,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	}
 	public void visit(MethodCallDeclNode node){
 		node.obj = node.getDesignator().obj;
-		currentMethodCall = node.obj;
+		currentMethodCallStack.push(node.obj);
 		methodCallContextStack.push(new MethodCallContext());
 		if(node.getDesignator() instanceof DesignatorChainNode || currentClass != null){
             if(!node.obj.getName().equals("ord") && !node.obj.getName().equals("chr") && !node.obj.getName().equals("len")) methodCallContextStack.peek().currActParNum++;
@@ -451,7 +452,7 @@ public class SemanticAnalyzer extends VisitorAdaptor {
 	}
 	public void visit(ActParDeclNode node){
 		methodCallContextStack.peek().currActParNum++;
-		Iterator<Obj> it = currentMethodCall.getLocalSymbols().iterator();
+		Iterator<Obj> it = currentMethodCallStack.peek().getLocalSymbols().iterator();
 		while(it.hasNext()){
 			Obj localSymbol = it.next();
 			if(localSymbol.getFpPos() == methodCallContextStack.peek().currActParNum){
